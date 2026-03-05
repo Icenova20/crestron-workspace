@@ -1,31 +1,49 @@
-# Gemini Project Context: Dev-Nginx (CH5 Preview)
+# Project Memory: Lockton Dunning Benefits (Crestron CH5)
 
 ## Project Overview
-This Nginx instance serves as the development preview for Crestron CH5 projects. 
+**Break Room 09.002 AV Control**
+A Crestron HTML5 (CH5) user interface for the Break Room Video Wall and Audio system.
+- **Target Platform:** Crestron TSW-1070 & WebXPanel.
+- **Theme:** Dark/Modern (Lockton Branding).
+- **Core Technologies:** HTML5, CSS3 (Grid Layout), Vanilla JavaScript.
 
 ## Architecture
-- **Location:** `d:\Antigravity\ch5-workspace\`
-- **Port:** `8001`
-- **Config:** Managed via local `nginx.conf`.
-- **Auto-Discovery:** The landing page (`index.html`) dynamically fetches a project list from `/api/projects/` (Nginx `autoindex_format json`).
+- **Entry Point:** `index.html` - Sidebar + Main Content Grid.
+- **Logic:** `js/app.js` - Handles Source Switching, Volume Feedback, and Modals.
+- **Styles:** `css/style.css` - Custom Dark Theme with Lockton Blue accents.
 
-## Project Management
-- **Adding Projects:**
-    1.  Place project folders directly into the `html/` directory.
-    2.  Alternatively, use `./new-project.ps1 -ProjectName "Project Name"` to scaffold from the template.
-- **Restart:** Automatic (files in `html/` are served instantly). 
+## Join Map Reference (Contract)
+*Synced with `js/app.js`*
 
-## Caching & Performance
-- **Cloudflare Integration:** On 2026-02-20, caching was enabled in Cloudflare.
-- **Nginx Configuration:**
-    - **Gzip:** Enabled for text, CSS, JS, and JSON to reduce payload size.
-    - **Current State:** The local `nginx.conf` currently lacks the explicit `Cache-Control` headers for static assets and HTML/API mentioned in previous documentation. (Pending Update)
-- **Header Control:** Previous documentation mentioned optimized `Cache-Control` headers; however, the active `nginx.conf` uses default behavior.
+| Signal Name | Join Type | ID | Notes |
+| :--- | :--- | :--- | :--- |
+| **System** | | | |
+| Power Off | Digital | 10 | Shuts down room, returns to Welcome Screen |
+| Settings Modal | Digital | 11 | Opens Admin/Advanced Modal |
+| **Source Selection** | Digital | | Mutually Exclusive |
+| AirMedia | Digital | 21 | Wireless Presentation |
+| Media Player | Digital | 22 | Video Wall Input |
+| **Audio** | | | |
+| Master Volume | Analog | 1 | 0-65535 (Break Room) |
+| Master Mute | Digital | 1 | Toggle |
+| Restroom Volume | Analog | 2 | 0-65535 (Advanced Tab) |
+| Restroom Mute | Digital | 2 | Toggle (Advanced Tab) |
+| **Microphones** | | | Voice Lift (Advanced Tab) |
+| Handheld Level | Analog | 11 | 0-65535 |
+| Handheld Mute | Digital | 11 | Toggle |
+| Bodypack Level | Analog | 12 | 0-65535 |
+| Bodypack Mute | Digital | 12 | Toggle |
+| **Sonos** | Digital | | Transport Controls (Advanced Tab) |
+| Previous | Digital | 41 | |
+| Play/Pause | Digital | 42 | |
+| Next | Digital | 43 | |
+| **Scheduling** | Digital | | Auto Power Logic |
+| Auto On (7am-9am) | Digital | 101-103 | 104=Disable |
+| Auto Off (5pm-7pm)| Digital | 111-113 | 114=Disable |
 
-## Deployment Note
-This stack was moved to the top-level `Documents` folder on 2026-01-23. On 2026-02-06, it was upgraded from a static success screen to a dynamic, Material-styled project selector.
-Refactored for Windows 11 on 2026-03-02 (Removed WSL/Docker dependencies).
-
-## Windows Development
-- Use `PowerShell` for all scripts.
-- Recommended tools: Node.js (for `ch5-cli`), Nginx for Windows or VS Code Live Server extension.
+## Development Notes
+- **Volume Handling:** The Master Volume slider is visible on the main page. Restroom and Mic levels are hidden in the Settings Modal to prevent accidental adjustment.
+- **Video Wall:** The UI treats the Video Wall as a single destination. Routing logic (NVX) is handled by the control processor based on the selected Source (21 or 22).
+- **Colors:**
+  - Sapphire: `#003478`
+  - Cerulean: `#009EE3`

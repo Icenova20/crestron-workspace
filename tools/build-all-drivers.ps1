@@ -15,7 +15,7 @@ if (-not (Test-Path $msbuildPath)) { Write-Error "MSBuild not found at $msbuildP
 if (-not (Test-Path $SplusccPath)) { Write-Error "Simpl+ Compiler not found at $SplusccPath"; exit 1 }
 
 $script:buildLog = @()
-function Log-Build { param($Name, $Status, $Message) $script:buildLog += [PSCustomObject]@{ Name=$Name; Status=$Status; Message=$Message } }
+function Add-BuildLogEntry { param($Name, $Status, $Message) $script:buildLog += [PSCustomObject]@{ Name = $Name; Status = $Status; Message = $Message } }
 
 
 $Projects = @(
@@ -54,12 +54,12 @@ foreach ($ProjRelPath in $Projects) {
             }
             
             Write-Host "Deployed: $ProjName.clz and USP" -ForegroundColor Green
-            Log-Build $ProjName "SUCCESS" "C# Build and CLZ Deployment complete."
+            Add-BuildLogEntry $ProjName "SUCCESS" "C# Build and CLZ Deployment complete."
         }
     }
     else {
         Write-Host "`nERROR: C# Build Failed for $ProjPath" -ForegroundColor Red
-        Log-Build $ProjRelPath "FAILED" "MSBuild returned non-zero exit code."
+        Add-BuildLogEntry $ProjRelPath "FAILED" "MSBuild returned non-zero exit code."
     }
 }
 
@@ -85,14 +85,15 @@ foreach ($Usp in $ModularUspFiles) {
         if (Test-Path $umcPath) {
             Copy-Item $umcPath $ExternalProjectDir -Force
             Write-Host "Deployed: $umcName" -ForegroundColor Green
-            Log-Build $Usp.Name "SUCCESS" "Compiled USP and Generated/Deployed UMC."
-        } else {
-            Log-Build $Usp.Name "WARNING" "Compiled USP but UMC Generation failed/skipped."
+            Add-BuildLogEntry $Usp.Name "SUCCESS" "Compiled USP and Generated/Deployed UMC."
+        }
+        else {
+            Add-BuildLogEntry $Usp.Name "WARNING" "Compiled USP but UMC Generation failed/skipped."
         }
     }
     else {
         Write-Host "`nERROR: SIMPL+ compilation failed for $($Usp.Name)" -ForegroundColor Red
-        Log-Build $Usp.Name "FAILED" "Simpl+ Compiler returned non-zero exit code."
+        Add-BuildLogEntry $Usp.Name "FAILED" "Simpl+ Compiler returned non-zero exit code."
     }
 }
 
@@ -105,11 +106,11 @@ foreach ($Usp in $LogicUspFiles) {
         $ushPath = Join-Path $ProjectLogicDir ($Usp.Name -replace ".usp", ".ush")
         Copy-Item $ushPath $ExternalProjectDir -Force
         Write-Host "Deployed Logic: $($Usp.Name)" -ForegroundColor Green
-        Log-Build $Usp.Name "SUCCESS" "Compiled Project Logic."
+        Add-BuildLogEntry $Usp.Name "SUCCESS" "Compiled Project Logic."
     }
     else {
         Write-Host "`nERROR: Logic compilation failed for $($Usp.Name)" -ForegroundColor Red
-        Log-Build $Usp.Name "FAILED" "Logic compilation failed."
+        Add-BuildLogEntry $Usp.Name "FAILED" "Logic compilation failed."
     }
 }
 
@@ -129,7 +130,8 @@ foreach ($item in $script:buildLog) {
 $summary += "$line"
 if ($failedCount -gt 0) {
     $summary += "Build finished with $failedCount errors."
-} else {
+}
+else {
     $summary += "All components built and deployed successfully!"
 }
 

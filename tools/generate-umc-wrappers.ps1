@@ -10,11 +10,12 @@ if (-not $simplDir) { $simplDir = Join-Path (Split-Path $PSScriptRoot -Parent) "
 if ($TargetUsh) {
     if (-not (Test-Path $TargetUsh)) { throw "Target USH not found: $TargetUsh" }
     $ushFiles = @(Get-Item $TargetUsh)
-} else {
+}
+else {
     $ushFiles = Get-ChildItem -Path $simplDir -Filter "*.ush"
 }
 
-function Parse-Ush {
+function Import-UshMetadata {
     param([string]$path)
     $lines = Get-Content $path
     $dict = @{}
@@ -29,19 +30,19 @@ function Parse-Ush {
     if (-not $dict.ContainsKey("Name")) { throw "USH file is missing 'Name' key: $path" }
     
     $module = @{
-        Name = $dict["Name"] -replace " \(Macro\)", ""
+        Name      = $dict["Name"] -replace " \(Macro\)", ""
         SmplCName = $dict["SmplCName"]
-        MaxI = [int]($dict["MaxVariableInputs"] ?? 0)
-        MaxI2 = [int]($dict["MaxVariableInputsList2"] ?? 0)
-        MaxO = [int]($dict["MaxVariableOutputs"] ?? 0)
-        MaxO2 = [int]($dict["MaxVariableOutputsList2"] ?? 0)
+        MaxI      = [int]($dict["MaxVariableInputs"] ?? 0)
+        MaxI2     = [int]($dict["MaxVariableInputsList2"] ?? 0)
+        MaxO      = [int]($dict["MaxVariableOutputs"] ?? 0)
+        MaxO2     = [int]($dict["MaxVariableOutputsList2"] ?? 0)
         NumFixedP = [int]($dict["NumFixedParams"] ?? 0)
-        MaxP = [int]($dict["MaxVariableParams"] ?? 0)
-        TotalP = [int]($dict["NumFixedParams"] ?? 0) + [int]($dict["MaxVariableParams"] ?? 0)
-        Inputs = @()
-        Outputs = @()
-        Params = @()
-        Comments = @()
+        MaxP      = [int]($dict["MaxVariableParams"] ?? 0)
+        TotalP    = [int]($dict["NumFixedParams"] ?? 0) + [int]($dict["MaxVariableParams"] ?? 0)
+        Inputs    = @()
+        Outputs   = @()
+        Params    = @()
+        Comments  = @()
     }
     
     # Capture Comments/Help text
@@ -143,7 +144,7 @@ function Get-BaseName {
     return $name
 }
 
-function Generate-Umc {
+function New-UmcWrapper {
     param($module)
     
     $umcName = $module.SmplCName.Replace(".usp", ".umc")
@@ -193,9 +194,9 @@ function Generate-Umc {
     $dpBlocks = ""
     $unusedSgId = 9999
     
-    for ($i=0; $i -lt $macroInputs.Count; $i++) {
+    for ($i = 0; $i -lt $macroInputs.Count; $i++) {
         $pin = $macroInputs[$i]
-        $pin | Add-Member -NotePropertyName MacroId -NotePropertyValue ($i+1)
+        $pin | Add-Member -NotePropertyName MacroId -NotePropertyValue ($i + 1)
         
         $sgTpLine = if ($pin.IsGap) { "`nSgTp=31" } elseif ($pin.SigType -eq "Analog") { "`nSgTp=2" } elseif ($pin.SigType -eq "Serial") { "`nSgTp=4" } else { "" }
         
@@ -214,9 +215,9 @@ function Generate-Umc {
         $sgId++; $dpId++
     }
     
-    for ($i=0; $i -lt $macroOutputs.Count; $i++) {
+    for ($i = 0; $i -lt $macroOutputs.Count; $i++) {
         $pin = $macroOutputs[$i]
-        $pin | Add-Member -NotePropertyName MacroId -NotePropertyValue ($i+1)
+        $pin | Add-Member -NotePropertyName MacroId -NotePropertyValue ($i + 1)
         
         $sgTpLine = if ($pin.IsGap) { "`nSgTp=31" } elseif ($pin.SigType -eq "Analog") { "`nSgTp=2" } elseif ($pin.SigType -eq "Serial") { "`nSgTp=4" } else { "" }
         
@@ -233,9 +234,9 @@ function Generate-Umc {
         $sgId++; $dpId++
     }
     
-    for ($i=0; $i -lt $macroParams.Count; $i++) {
+    for ($i = 0; $i -lt $macroParams.Count; $i++) {
         $pin = $macroParams[$i]
-        $pin | Add-Member -NotePropertyName MacroId -NotePropertyValue ($i+1)
+        $pin | Add-Member -NotePropertyName MacroId -NotePropertyValue ($i + 1)
         
         $pin | Add-Member -NotePropertyName SgId -NotePropertyValue $sgId
         $pin | Add-Member -NotePropertyName DpId -NotePropertyValue $dpId
@@ -280,7 +281,7 @@ ZeroOnIoOk=0
 SGMethod=1
 "@
 
-    for ($i=0; $i -lt $module.Comments.Count; $i++) {
+    for ($i = 0; $i -lt $module.Comments.Count; $i++) {
         $content += "`nCmn$($i+1)=$($module.Comments[$i])"
     }
     
@@ -315,21 +316,21 @@ SymbolTree=46
 UserSymTreeName=$category
 "@
 
-    for ($i=0; $i -lt $macroInputs.Count; $i++) { 
+    for ($i = 0; $i -lt $macroInputs.Count; $i++) { 
         $t = if ($macroInputs[$i].IsGap) { "Digital|Analog|Serial|String" } elseif ($macroInputs[$i].SigType -eq "Digital") { "Digital" } elseif ($macroInputs[$i].SigType -eq "Analog") { "Analog" } else { "Serial" }
         $content += "`nInputSigType$($i+1)=$t"
     }
-    for ($i=0; $i -lt $macroOutputs.Count; $i++) { 
+    for ($i = 0; $i -lt $macroOutputs.Count; $i++) { 
         $t = if ($macroOutputs[$i].IsGap) { "Digital|Analog|Serial|String" } elseif ($macroOutputs[$i].SigType -eq "Digital") { "Digital" } elseif ($macroOutputs[$i].SigType -eq "Analog") { "Analog" } else { "Serial" }
         $content += "`nOutputSigType$($i+1)=$t" 
     }
-    for ($i=0; $i -lt $macroParams.Count; $i++) { 
+    for ($i = 0; $i -lt $macroParams.Count; $i++) { 
         $content += "`nParamSigType$($i+1)=String|Constant" 
     }
 
-    for ($i=0; $i -lt $macroInputs.Count; $i++) { $content += "`nInputCue$($i+1)=$($macroInputs[$i].Name)" }
-    for ($i=0; $i -lt $macroOutputs.Count; $i++) { $content += "`nOutputCue$($i+1)=$($macroOutputs[$i].Name)" }
-    for ($i=0; $i -lt $macroParams.Count; $i++) { $content += "`nParamCue$($i+1)=$($macroParams[$i].Name)" }
+    for ($i = 0; $i -lt $macroInputs.Count; $i++) { $content += "`nInputCue$($i+1)=$($macroInputs[$i].Name)" }
+    for ($i = 0; $i -lt $macroOutputs.Count; $i++) { $content += "`nOutputCue$($i+1)=$($macroOutputs[$i].Name)" }
+    for ($i = 0; $i -lt $macroParams.Count; $i++) { $content += "`nParamCue$($i+1)=$($macroParams[$i].Name)" }
 
     $validInputs = @($macroInputs | Where-Object { -not $_.IsGap })
     $validOutputs = @($macroOutputs | Where-Object { -not $_.IsGap })
@@ -401,7 +402,7 @@ UserSymTreeName=$category
     }
     
     $content += "`nmP=$($module.TotalP)"
-    for ($idx=1; $idx -le $module.TotalP; $idx++) {
+    for ($idx = 1; $idx -le $module.TotalP; $idx++) {
         $pObj = $macroParams | Where-Object { $_.InnerId -eq $idx } | Select-Object -First 1
         if ($pObj) { $content += "`nP$idx=#$($pObj.Name)" }
         else { $content += "`nP$idx=" }
@@ -421,7 +422,7 @@ UserSymTreeName=$category
 
 foreach ($f in $ushFiles) {
     if ($f.Name -match "^Lockton") { continue }
-    $mod = Parse-Ush $f.FullName
-    Generate-Umc $mod
+    $mod = Import-UshMetadata $f.FullName
+    New-UmcWrapper $mod
 }
 Write-Host "UMC Generation Complete!" -ForegroundColor Cyan
