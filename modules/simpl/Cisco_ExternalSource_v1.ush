@@ -1,0 +1,176 @@
+[BEGIN]
+  Version=1
+[END]
+[BEGIN]
+  ObjTp=FSgntr
+  Sgntr=UserSPlus
+  RelVrs=1
+  IntStrVrs=1
+  SPlusVrs=4.06.00
+  CrossCplrVrs=1.3
+[END]
+[BEGIN]
+  ObjTp=Hd
+  Cmn1=Modular Cisco External Source Driver\\--------------------------
+  Cmn2=----------\\This module acts as the TCP/IP control interface for||1
+  Cmn3=the Cisco Webex Codec.\\It allows the Crestron system to inject||1
+  Cmn4=custom "External Sources" into the \\Cisco Touch 10/Navigator UI||1
+  Cmn5=and monitor when the user selects them.\\\\INPUTS:\\[Initialize]||1
+  Cmn6=||7: Pulse to instantiate the C# driver and connect over SSH/TCP.
+  Cmn7=\\[Register_Source]   : Pulse to register a new external source||1
+  Cmn8=on the Cisco UI. (Array 1-5)\\[Set_Source_Ready]  : Pulse to set||1
+  Cmn9=a specific source's state to 'Ready' (visible/selectable). (Array||1
+  Cmn10=1-5)\\[Set_Source_Hidden] : Pulse to set a specific source's state||1
+  Cmn11=to 'Hidden' (removed from UI). (Array 1-5)\\\\[Source_ID]||7
+  Cmn12=||2: Unique serial string ID for the source (e.g., "PC", "AirMedia").
+  Cmn13=||1Maximum 50 characters. (Array 1-5)\\[Source_Name]       : Friendly||1
+  Cmn14=serial string name for the Cisco UI (e.g., "Room PC"). Maximum 50||1
+  Cmn15=characters. (Array 1-5)\\[Connector_ID]      : Physical HDMI input||1
+  Cmn16=connector on the codec. Analog Decimal value (Range: 1 to 3). (Analog||1
+  Cmn17=Array 1-5)\\\\OUTPUTS:\\[Active_Source_ID_FB] : Serial string reporting||1
+  Cmn18=the currently active Source_ID chosen on the Cisco UI. String will||1
+  Cmn19=exactly match one of the registered Source_ID inputs, or "Hidden".
+  Cmn20=\\\\PARAMETERS:\\[IP_Address]        : The IP address of the Cisco||1
+  Cmn21=Codec.\\[Username]          : The SSH/API username for the Cisco||1
+  Cmn22=Codec (e.g., "admin").\\[Password]          : The SSH/API password||1
+  Cmn23=for the Cisco Codec.
+[END]
+[BEGIN]
+  ObjTp=Symbol
+  Exclusions=1,19,20,21,88,89,167,168,179,213,214,215,216,217,225,226,248,249,266,267,310,362,378,380,405,407,408,409,478,522,537,554,586,590,611,624,718,756,767,830,841,842,854,883,955,1032,1062,1079,1128,1129,1134,1140,1157,1158,1195,1199,1220,1221,1222,1223,1299,1348,1349,1439,1472,1473,1499,1746,1766,1803,1975,2229,2354,2514,2523,2532,2567,2574,2590,2651,2655,2706,2707,2817,2886,2938,2947,3181,3197,3233,3235,3236,3427,3454,3567,3568,3601,3602,3680,3682,3706,3708,3710,3735,3736,3816,3888,3902,3903,3912,3918,3925,3926,4176,4193,4206,4207,4308,4476,4591,4769,5360,5388,5420,5455,5497,5699,5813,5919,6150,6161,
+  Exclusions_CDS=5,6
+  Inclusions_CDS=7
+  Name=Cisco ExternalSource v1.0
+  SmplCName=Cisco_ExternalSource_v1.usp
+  Code=1
+  SysRev5=4.000
+  SMWRev=3.00.00
+  InputCue1=Initialize
+  InputSigType1=Digital
+  InputCue2=Register_Source[1]
+  InputSigType2=Digital
+  InputCue3=Register_Source[2]
+  InputSigType3=Digital
+  InputCue4=Register_Source[3]
+  InputSigType4=Digital
+  InputCue5=Register_Source[4]
+  InputSigType5=Digital
+  InputCue6=Register_Source[5]
+  InputSigType6=Digital
+  InputCue7=Set_Source_Ready[1]
+  InputSigType7=Digital
+  InputCue8=Set_Source_Ready[2]
+  InputSigType8=Digital
+  InputCue9=Set_Source_Ready[3]
+  InputSigType9=Digital
+  InputCue10=Set_Source_Ready[4]
+  InputSigType10=Digital
+  InputCue11=Set_Source_Ready[5]
+  InputSigType11=Digital
+  InputCue12=Set_Source_Hidden[#]
+  InputSigType12=Digital
+  InputList2Cue1=Source_ID[1]
+  InputList2SigType1=Serial
+  InputList2Cue2=Source_ID[2]
+  InputList2SigType2=Serial
+  InputList2Cue3=Source_ID[3]
+  InputList2SigType3=Serial
+  InputList2Cue4=Source_ID[4]
+  InputList2SigType4=Serial
+  InputList2Cue5=Source_ID[5]
+  InputList2SigType5=Serial
+  InputList2Cue6=Source_Name[1]
+  InputList2SigType6=Serial
+  InputList2Cue7=Source_Name[2]
+  InputList2SigType7=Serial
+  InputList2Cue8=Source_Name[3]
+  InputList2SigType8=Serial
+  InputList2Cue9=Source_Name[4]
+  InputList2SigType9=Serial
+  InputList2Cue10=Source_Name[5]
+  InputList2SigType10=Serial
+  InputList2Cue11=Connector_ID[#]
+  InputList2SigType11=Analog
+  OutputList2Cue1=Active_Source_ID_FB
+  OutputList2SigType1=Serial
+  ParamCue1=[Reference Name]
+  ParamCue2=IP_Address
+  ParamSigType2=String
+  ParamCue3=Username
+  ParamSigType3=String
+  ParamCue4=Password
+  ParamSigType4=String
+  MinVariableInputs=12
+  MaxVariableInputs=16
+  MinVariableInputsList2=11
+  MaxVariableInputsList2=15
+  MinVariableOutputs=0
+  MaxVariableOutputs=0
+  MinVariableOutputsList2=1
+  MaxVariableOutputsList2=1
+  MinVariableParams=3
+  MaxVariableParams=3
+  Expand=expand_separately
+  Expand2=expand_separately
+  ProgramTree=Logic
+  SymbolTree=46
+  UserSymTreeName=<unnamed>
+  Hint=
+  PdfHelp=
+  HelpID= 
+  Render=4
+  Smpl-C=16
+  CompilerCode=-48
+  CompilerParamCode=27
+  CompilerParamCode5=14
+  NumFixedParams=1
+  Pp1=1
+  Pp2=2
+  Pp3=3
+  Pp4=4
+  MPp=4
+  NVStorage=10
+  ParamSigType1=String
+  SmplCInputCue1=o#
+  SmplCOutputCue1=i#
+  SmplCInputList2Cue1=an#
+  SmplCOutputList2Cue1=ai#
+  SPlus2CompiledName=S2_Cisco_ExternalSource_v1
+  SymJam=NonExclusive
+  FileName=Cisco_ExternalSource_v1.ush
+  SIMPLPlusModuleEncoding=0
+  clz1=CiscoExternalSource
+[END]
+[BEGIN]
+  ObjTp=Dp
+  H=1
+  Tp=1
+  NoS=False
+[END]
+[BEGIN]
+  ObjTp=Dp
+  H=2
+  Tp=1
+  HD=True
+  DV=
+  NoS=False
+  VVS=0
+[END]
+[BEGIN]
+  ObjTp=Dp
+  H=3
+  Tp=1
+  HD=True
+  DV=
+  NoS=False
+  VVS=0
+[END]
+[BEGIN]
+  ObjTp=Dp
+  H=4
+  Tp=1
+  HD=True
+  DV=
+  NoS=False
+  VVS=0
+[END]

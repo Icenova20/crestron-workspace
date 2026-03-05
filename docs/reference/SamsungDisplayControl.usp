@@ -1,0 +1,485 @@
+/*******************************************************************************************
+  MODULE DESCRIPTION:
+  Controls Samsung Displays via RS232 (DB9 or EX-Link).
+  Auto-detects protocol (MDC '0xAA' or EX-Link '0x08') based on feedback.
+  Default starts in MDC mode.
+
+  AUTHOR: Gemini Agent
+  DATE: 2025-12-17
+  VERSION: 1.2.1 (Adaptive Polling Fix)
+*******************************************************************************************/
+
+//==================
+// COMPILER DIRECTIVES
+//==================
+#SYMBOL_NAME      "Samsung Display Control"
+#CATEGORY         "24"
+#DEFAULT_VOLATILE
+#ENABLE_STACK_CHECKING
+#ENABLE_TRACE
+#HELP_PDF_FILE    "SamsungDisplayControl_Help.pdf"
+
+//==================
+// I/O DEFINITIONS
+//==================
+
+// ------ INPUTS --------
+
+// --- Digitals (12 Total) ---
+DIGITAL_INPUT   Enable_Polling_b; // Row 1
+DIGITAL_INPUT   Power_On_b;      // Row 2
+DIGITAL_INPUT   Power_Off_b;     // Row 3
+DIGITAL_INPUT   Power_Toggle_b;  // Row 4
+DIGITAL_INPUT   Mute_Toggle_b;   // Row 5
+DIGITAL_INPUT   Volume_Up_b;     // Row 6
+DIGITAL_INPUT   Volume_Down_b;   // Row 7
+DIGITAL_INPUT   Input_HDMI1_b;   // Row 8
+DIGITAL_INPUT   Input_HDMI2_b;   // Row 9
+DIGITAL_INPUT   Input_HDMI3_b;   // Row 10
+DIGITAL_INPUT   Input_HDMI4_b;   // Row 11
+DIGITAL_INPUT   Input_DisplayPort_b; // Row 12
+
+// --- Tuner / Keypad Control ---
+DIGITAL_INPUT   Keypad_0_b;      // Row 13
+DIGITAL_INPUT   Keypad_1_b;      // Row 14
+DIGITAL_INPUT   Keypad_2_b;      // Row 15
+DIGITAL_INPUT   Keypad_3_b;      // Row 16
+DIGITAL_INPUT   Keypad_4_b;      // Row 17
+DIGITAL_INPUT   Keypad_5_b;      // Row 18
+DIGITAL_INPUT   Keypad_6_b;      // Row 19
+DIGITAL_INPUT   Keypad_7_b;      // Row 20
+DIGITAL_INPUT   Keypad_8_b;      // Row 21
+DIGITAL_INPUT   Keypad_9_b;      // Row 22
+DIGITAL_INPUT   Keypad_Dash_b;   // Row 23
+DIGITAL_INPUT   Keypad_Enter_b;  // Row 24
+DIGITAL_INPUT   Keypad_Exit_b;   // Row 25
+DIGITAL_INPUT   Keypad_ChList_b; // Row 26
+DIGITAL_INPUT   Keypad_Menu_b;   // Row 27
+DIGITAL_INPUT   Keypad_Tools_b;  // Row 28
+DIGITAL_INPUT   Keypad_Return_b; // Row 29
+DIGITAL_INPUT   Keypad_Info_b;   // Row 30
+DIGITAL_INPUT   Keypad_SmartHub_b; // Row 31
+DIGITAL_INPUT   Keypad_Up_b;     // Row 32
+DIGITAL_INPUT   Keypad_Down_b;   // Row 33
+DIGITAL_INPUT   Keypad_Left_b;   // Row 34
+DIGITAL_INPUT   Keypad_Right_b;  // Row 35
+
+// --- Analogs (2 Total) ---
+ANALOG_INPUT    Set_Volume_n;    // Row 36
+ANALOG_INPUT    _SKIP_;          // Row 37 (Padding to match Output count)
+
+// --- Serials (1 Total) ---
+STRING_INPUT    From_Device_s[255]; // Row 38
+
+
+// ------ OUTPUTS --------
+
+// --- Digitals (12 Total to match Inputs) ---
+DIGITAL_OUTPUT  _SKIP_;          // Row 1 (Enable_Polling)
+DIGITAL_OUTPUT  Power_Is_On_fb;  // Row 2 (Matches Power_On)
+DIGITAL_OUTPUT  _SKIP_;          // Row 3
+DIGITAL_OUTPUT  _SKIP_;          // Row 4
+DIGITAL_OUTPUT  Mute_Is_On_fb;   // Row 5 (Matches Mute_Toggle)
+DIGITAL_OUTPUT  _SKIP_;          // Row 6
+DIGITAL_OUTPUT  _SKIP_;          // Row 7
+DIGITAL_OUTPUT  _SKIP_;          // Row 8
+DIGITAL_OUTPUT  _SKIP_;          // Row 9
+DIGITAL_OUTPUT  _SKIP_;          // Row 10
+DIGITAL_OUTPUT  _SKIP_;          // Row 11
+DIGITAL_OUTPUT  _SKIP_;          // Row 12
+
+// --- Keypad Spacers ---
+DIGITAL_OUTPUT  _SKIP_;          // Row 13
+DIGITAL_OUTPUT  _SKIP_;          // Row 14
+DIGITAL_OUTPUT  _SKIP_;          // Row 15
+DIGITAL_OUTPUT  _SKIP_;          // Row 16
+DIGITAL_OUTPUT  _SKIP_;          // Row 17
+DIGITAL_OUTPUT  _SKIP_;          // Row 18
+DIGITAL_OUTPUT  _SKIP_;          // Row 19
+DIGITAL_OUTPUT  _SKIP_;          // Row 20
+DIGITAL_OUTPUT  _SKIP_;          // Row 21
+DIGITAL_OUTPUT  _SKIP_;          // Row 22
+DIGITAL_OUTPUT  _SKIP_;          // Row 23
+DIGITAL_OUTPUT  _SKIP_;          // Row 24
+DIGITAL_OUTPUT  _SKIP_;          // Row 25
+DIGITAL_OUTPUT  _SKIP_;          // Row 26
+DIGITAL_OUTPUT  _SKIP_;          // Row 27
+DIGITAL_OUTPUT  _SKIP_;          // Row 28
+DIGITAL_OUTPUT  _SKIP_;          // Row 29
+DIGITAL_OUTPUT  _SKIP_;          // Row 30
+DIGITAL_OUTPUT  _SKIP_;          // Row 31
+DIGITAL_OUTPUT  _SKIP_;          // Row 32
+DIGITAL_OUTPUT  _SKIP_;          // Row 33
+DIGITAL_OUTPUT  _SKIP_;          // Row 34
+DIGITAL_OUTPUT  _SKIP_;          // Row 35
+
+// --- Analogs (2 Total) ---
+ANALOG_OUTPUT   Volume_Level_fb; // Row 36 (Matches Set_Volume)
+ANALOG_OUTPUT   Protocol_Mode_fb; // Row 37
+
+// --- Serials (1 Total) ---
+STRING_OUTPUT   To_Device_s;     // Row 38 (Matches From_Device)
+
+
+// ------ PARAMETERS --------
+INTEGER_PARAMETER _SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,p_nDisplayID;
+
+#BEGIN_PARAMETER_PROPERTIES p_nDisplayID
+   propValidUnits = unitDecimal;
+   propDefaultValue = 1d;
+   propList = {0d,"ID 0 (Broadcast)"},{1d,"ID 1 (Default)"},{2d,"ID 2"},{3d,"ID 3"},{4d,"ID 4"},{5d,"ID 5"};
+#END_PARAMETER_PROPERTIES
+
+//==================
+// GLOBAL VARIABLES
+//==================
+INTEGER g_nVolume;
+INTEGER g_nMuted; // 0 = Unmuted, 1 = Muted
+STRING  g_sRxBuffer[255]; // Buffer for incoming data
+INTEGER g_nProtocol; // 1 = MDC (Default), 2 = EX-Link
+INTEGER g_nPollingEnabled;
+INTEGER g_nWaitingForResponse;
+INTEGER g_nPollRetryCounter;
+
+//==================
+// CONSTANTS
+//==================
+INTEGER PROTOCOL_MDC;
+INTEGER PROTOCOL_EXLINK;
+INTEGER BROADCAST_ID;
+
+//==================
+// HELPER FUNCTIONS
+//==================
+
+/* 
+  Calculates Checksum for EX-Link
+*/ 
+Function SendExLinkCommand(INTEGER nCmd, INTEGER nVal)
+{
+    STRING sCmd[10];
+    INTEGER nChecksum;
+    INTEGER nC1, nC2, nC3, nData;
+    
+    nC3 = 0x00;
+
+    Switch(nCmd)
+    {
+        Case(0x11): // Power
+        {
+            if (nVal = 1) { nC1 = 0x00; nC2 = 0x00; nData = 0x02; } // Power On
+            else          { nC1 = 0x00; nC2 = 0x00; nData = 0x01; } // Power Off
+        }
+        Case(0x12): // Volume
+        {
+            nC1 = 0x01; nC2 = 0x00; nData = nVal;
+        }
+        Case(0x13): // Mute
+        {
+            nC1 = 0x02; nC2 = 0x00; nData = nVal; // 0=Off, 1=On
+        }
+        Case(0x14): // Input
+        {
+             nC1 = 0x0A; nC2 = 0x00;
+             if (nVal = 0x21) nData = 0x05; // HDMI 1
+             else if (nVal = 0x23) nData = 0x06; // HDMI 2
+             else nData = 0x05;
+        }
+        Case(0x0D): // Virtual Key (Remote Button)
+        {
+            nC1 = 0x0D; nC2 = 0x00; nData = nVal;
+        }
+    }
+    
+    nChecksum = 0x08 + 0x22 + nC1 + nC2 + nC3 + nData;
+    nChecksum = (0x100 - nChecksum) & 0xFF;
+    
+    Makestring(sCmd, "\x08\x22%c%c%c%c%c", nC1, nC2, nC3, nData, nChecksum);
+    To_Device_s = sCmd;
+}
+
+Function SendMDCCommand(INTEGER nCmd, INTEGER nID, INTEGER nDataVal)
+{
+    STRING sCmd[10];
+    INTEGER nChecksum;
+    INTEGER nDataLen;
+    INTEGER nMdcCmd;
+    
+    nMdcCmd = nCmd;
+    nDataLen = 1;
+    
+    if (nCmd = 0x0D) nMdcCmd = 0xFE;
+
+    nChecksum = nMdcCmd + nID + nDataLen + nDataVal;
+    Makestring(sCmd, "\xAA%c%c%c%c%c", nMdcCmd, nID, nDataLen, nDataVal, (nChecksum & 0xFF));
+    
+    To_Device_s = sCmd;
+}
+
+Function SendCommand(INTEGER nCmd, INTEGER nDataVal)
+{
+    if (g_nProtocol = PROTOCOL_EXLINK)
+        SendExLinkCommand(nCmd, nDataVal);
+    else
+        SendMDCCommand(nCmd, p_nDisplayID, nDataVal);
+}
+
+Function PollDevice()
+{
+    g_nWaitingForResponse = 1;
+    if (g_nProtocol = PROTOCOL_MDC)
+        SendMDCCommand(0x11, BROADCAST_ID, 0xFF); // MDC Power Poll (Status) using Broadcast
+    else
+        SendExLinkCommand(0x11, 0xFF); // EX-Link doesn't have true broadcast ID 0, just poll
+}
+
+/*
+  Parses MDC (0xAA) Responses
+*/
+Function ParseMDC(STRING sMsg)
+{
+    INTEGER nCmd;
+    INTEGER nData;
+    INTEGER nID;
+    
+    g_nWaitingForResponse = 0;
+    g_nPollRetryCounter = 0;
+
+    if (g_nProtocol <> PROTOCOL_MDC)
+    {
+        g_nProtocol = PROTOCOL_MDC;
+        Protocol_Mode_fb = 1;
+        Trace("SamsungDisplayControl: Switched to MDC Protocol\n");
+    }
+    
+    nID = byte(sMsg, 3);
+    
+    // ID Check logic
+    if (nID <> p_nDisplayID && p_nDisplayID <> BROADCAST_ID)
+    {
+        Print("SamsungDisplayControl: WARNING - TV ID is set to %u, but module is set to %u. Check TV ID settings.\n", nID, p_nDisplayID);
+    }
+
+    if (byte(sMsg, 5) = 0x41) // 'A' for ACK
+    {
+        nCmd = byte(sMsg, 6);
+        nData = byte(sMsg, 7);
+        
+        Switch(nCmd)
+        {
+            Case(0x11): { Power_Is_On_fb = nData; }
+            Case(0x12): { Volume_Level_fb = nData; g_nVolume = nData; }
+            Case(0x13): { Mute_Is_On_fb = nData; g_nMuted = nData; }
+        }
+    }
+}
+
+/*
+  Parses EX-Link (0x08) Responses
+*/
+Function ParseExLink(STRING sMsg)
+{
+    INTEGER nC1;
+    INTEGER nData;
+    
+    g_nWaitingForResponse = 0;
+    g_nPollRetryCounter = 0;
+
+    if (g_nProtocol <> PROTOCOL_EXLINK)
+    {
+        g_nProtocol = PROTOCOL_EXLINK;
+        Protocol_Mode_fb = 2;
+        Trace("SamsungDisplayControl: Switched to EX-Link Protocol\n");
+    }
+
+    nC1 = byte(sMsg, 3);
+    nData = byte(sMsg, 5);
+    
+    Switch(nC1)
+    {
+        Case(0x00): { if(nData=2 || nData=1) Power_Is_On_fb=1; else Power_Is_On_fb=0; }
+        Case(0x01): { Volume_Level_fb = nData; g_nVolume = nData; }
+        Case(0x02): { Mute_Is_On_fb = nData; g_nMuted = nData; }
+    }
+}
+
+// Polling Loop Logic
+Function StartPolling()
+{
+    STRING sProtocol[10];
+
+    While(1)
+    {
+        if (g_nPollingEnabled)
+        {
+            if (g_nWaitingForResponse)
+            {
+                g_nPollRetryCounter = g_nPollRetryCounter + 1;
+                if (g_nPollRetryCounter >= 3) // 3 missed polls
+                {
+                    g_nPollRetryCounter = 0;
+                    if (g_nProtocol = PROTOCOL_MDC) 
+                    {
+                        g_nProtocol = PROTOCOL_EXLINK;
+                        sProtocol = "EX-Link";
+                    }
+                    else 
+                    {
+                        g_nProtocol = PROTOCOL_MDC;
+                        sProtocol = "MDC";
+                    }
+                    
+                    Protocol_Mode_fb = g_nProtocol;
+                    Print("SamsungDisplayControl: WARNING - No response to polls. Switching protocol to %s\n", sProtocol);
+                }
+            }
+            PollDevice();
+        }
+        Wait(500); // 5 Second Poll Interval
+    }
+}
+
+Function ProcessRx()
+{
+    STRING sTemp[50];
+    
+    While (find("\xAA", g_sRxBuffer) > 0 || find("\x08", g_sRxBuffer) > 0)
+    {
+        if (find("\xAA", g_sRxBuffer) > 0 && (find("\xAA", g_sRxBuffer) < find("\x08", g_sRxBuffer) || find("\x08", g_sRxBuffer) = 0))
+        {
+             if (byte(g_sRxBuffer, 1) <> 0xAA)
+             {
+                sTemp = remove("\xAA", g_sRxBuffer); 
+                g_sRxBuffer = "\xAA" + g_sRxBuffer;
+             }
+             
+             if (len(g_sRxBuffer) >= 8)
+             {
+                 sTemp = left(g_sRxBuffer, 8);
+                 g_sRxBuffer = right(g_sRxBuffer, len(g_sRxBuffer)-8);
+                 ParseMDC(sTemp);
+             }
+             else break;
+        }
+        else
+        {
+             if (byte(g_sRxBuffer, 1) <> 0x08)
+             {
+                sTemp = remove("\x08", g_sRxBuffer); 
+                g_sRxBuffer = "\x08" + g_sRxBuffer;
+             }
+             
+             if (len(g_sRxBuffer) >= 6)
+             {
+                 sTemp = left(g_sRxBuffer, 6);
+                 g_sRxBuffer = right(g_sRxBuffer, len(g_sRxBuffer)-6);
+                 ParseExLink(sTemp);
+             }
+             else break;
+        }
+    }
+}
+
+//==================
+// EVENT HANDLERS
+//==================
+
+PUSH Enable_Polling_b  { g_nPollingEnabled = 1; }
+RELEASE Enable_Polling_b { g_nPollingEnabled = 0; }
+
+CHANGE From_Device_s
+{
+    if (len(g_sRxBuffer) + len(From_Device_s) < 255)
+    {
+        g_sRxBuffer = g_sRxBuffer + From_Device_s;
+        ProcessRx();
+    }
+    else
+    {
+        g_sRxBuffer = From_Device_s; 
+    }
+}
+
+PUSH Power_On_b     { SendCommand(0x11, 0x01); }
+PUSH Power_Off_b    { SendCommand(0x11, 0x00); }
+PUSH Power_Toggle_b 
+{ 
+    if (Power_Is_On_fb) SendCommand(0x11, 0x00);
+    else SendCommand(0x11, 0x01);
+}
+
+CHANGE Set_Volume_n 
+{ 
+    g_nVolume = Set_Volume_n; 
+    SendCommand(0x12, g_nVolume); 
+}
+
+PUSH Volume_Up_b
+{
+    if (g_nVolume < 100) { g_nVolume = g_nVolume + 1; SendCommand(0x12, g_nVolume); }
+}
+
+PUSH Volume_Down_b
+{
+    if (g_nVolume > 0) { g_nVolume = g_nVolume - 1; SendCommand(0x12, g_nVolume); }
+}
+
+PUSH Mute_Toggle_b
+{
+    if (g_nMuted = 1) g_nMuted = 0; else g_nMuted = 1;
+    SendCommand(0x13, g_nMuted);
+}
+
+// HDMI mappings
+PUSH Input_HDMI1_b { SendCommand(0x14, 0x21); }
+PUSH Input_HDMI2_b { SendCommand(0x14, 0x23); } 
+PUSH Input_HDMI3_b { SendCommand(0x14, 0x31); }
+PUSH Input_HDMI4_b { SendCommand(0x14, 0x33); }
+PUSH Input_DisplayPort_b { SendCommand(0x14, 0x55); }
+
+// Keypad mappings (Parity via ExLink 0x0D and MDC 0xFE)
+PUSH Keypad_0_b { SendCommand(0x0D, 17); }
+PUSH Keypad_1_b { SendCommand(0x0D, 4); }
+PUSH Keypad_2_b { SendCommand(0x0D, 5); }
+PUSH Keypad_3_b { SendCommand(0x0D, 6); }
+PUSH Keypad_4_b { SendCommand(0x0D, 7); }
+PUSH Keypad_5_b { SendCommand(0x0D, 8); }
+PUSH Keypad_6_b { SendCommand(0x0D, 9); }
+PUSH Keypad_7_b { SendCommand(0x0D, 10); }
+PUSH Keypad_8_b { SendCommand(0x0D, 11); }
+PUSH Keypad_9_b { SendCommand(0x0D, 12); }
+PUSH Keypad_Dash_b { SendCommand(0x0D, 19); } // Pre-Ch / Dash
+PUSH Keypad_Enter_b { SendCommand(0x0D, 47); }
+PUSH Keypad_Exit_b { SendCommand(0x0D, 45); }
+PUSH Keypad_ChList_b { SendCommand(0x0D, 108); }
+PUSH Keypad_Menu_b { SendCommand(0x0D, 26); }
+PUSH Keypad_Tools_b { SendCommand(0x0D, 75); }
+PUSH Keypad_Return_b { SendCommand(0x0D, 88); }
+PUSH Keypad_Info_b { SendCommand(0x0D, 31); }
+PUSH Keypad_SmartHub_b { SendCommand(0x0D, 147); }
+PUSH Keypad_Up_b { SendCommand(0x0D, 96); }
+PUSH Keypad_Down_b { SendCommand(0x0D, 97); }
+PUSH Keypad_Left_b { SendCommand(0x0D, 101); }
+PUSH Keypad_Right_b { SendCommand(0x0D, 98); }
+
+//==================
+// MAIN FUNCTION
+//==================
+
+Function Main()
+{
+    PROTOCOL_MDC = 1;
+    PROTOCOL_EXLINK = 2;
+    BROADCAST_ID = 0;
+    
+    g_nVolume = 0;
+    g_nMuted = 0;
+    g_nProtocol = PROTOCOL_MDC; // Default to MDC
+    g_nPollingEnabled = 1; // Default to Enabled
+    g_nWaitingForResponse = 0;
+    g_nPollRetryCounter = 0;
+    
+    Protocol_Mode_fb = 1;
+    
+    StartPolling();
+}

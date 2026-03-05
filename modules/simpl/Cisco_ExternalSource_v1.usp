@@ -1,0 +1,89 @@
+#SYMBOL_NAME "Cisco ExternalSource v1.0"
+#CATEGORY "46" 
+#DEFAULT_VOLATILE
+#ENABLE_STACK_CHECKING
+
+#HELP_BEGIN
+Modular Cisco External Source Driver
+------------------------------------
+This module acts as the TCP/IP control interface for the Cisco Webex Codec.
+It allows the Crestron system to inject custom "External Sources" into the 
+Cisco Touch 10/Navigator UI and monitor when the user selects them.
+
+INPUTS:
+[Initialize]        : Pulse to instantiate the C# driver and connect over SSH/TCP.
+[Register_Source]   : Pulse to register a new external source on the Cisco UI. (Array 1-5)
+[Set_Source_Ready]  : Pulse to set a specific source's state to 'Ready' (visible/selectable). (Array 1-5)
+[Set_Source_Hidden] : Pulse to set a specific source's state to 'Hidden' (removed from UI). (Array 1-5)
+
+[Source_ID]         : Unique serial string ID for the source (e.g., "PC", "AirMedia"). Maximum 50 characters. (Array 1-5)
+[Source_Name]       : Friendly serial string name for the Cisco UI (e.g., "Room PC"). Maximum 50 characters. (Array 1-5)
+[Connector_ID]      : Physical HDMI input connector on the codec. Analog Decimal value (Range: 1 to 3). (Analog Array 1-5)
+
+OUTPUTS:
+[Active_Source_ID_FB] : Serial string reporting the currently active Source_ID chosen on the Cisco UI. String will exactly match one of the registered Source_ID inputs, or "Hidden".
+
+PARAMETERS:
+[IP_Address]        : The IP address of the Cisco Codec.
+[Username]          : The SSH/API username for the Cisco Codec (e.g., "admin").
+[Password]          : The SSH/API password for the Cisco Codec.
+#HELP_END
+
+#USER_SIMPLSHARP_LIBRARY "CiscoExternalSource"
+
+DIGITAL_INPUT  Initialize;
+DIGITAL_INPUT  Register_Source[5];
+DIGITAL_INPUT  Set_Source_Ready[5];
+DIGITAL_INPUT  Set_Source_Hidden[5];
+STRING_INPUT   Source_ID[5][50];
+STRING_INPUT   Source_Name[5][50];
+ANALOG_INPUT   Connector_ID[5];
+
+STRING_OUTPUT  Active_Source_ID_FB;
+
+STRING_PARAMETER IP_Address[50], Username[50], Password[50];
+
+#BEGIN_PARAMETER_PROPERTIES IP_Address, Username, Password
+   propValidUnits = unitString;
+   propDefaultUnit = unitString;
+   propDefaultValue = "";
+#END_PARAMETER_PROPERTIES
+
+ExternalSourceDriver _driver;
+
+CALLBACK FUNCTION OnSourceChange()
+{
+    Active_Source_ID_FB = _driver.CurrentSourceId;
+}
+
+PUSH Initialize
+{
+    _driver.Initialize(IP_Address, Username, Password);
+}
+
+PUSH Register_Source
+{
+    integer i;
+    i = getLastModifiedArrayIndex();
+    _driver.RegisterSource(Source_ID[i], Source_Name[i], Connector_ID[i]);
+}
+
+PUSH Set_Source_Ready
+{
+    integer i;
+    i = getLastModifiedArrayIndex();
+    _driver.SetSourceState(Source_ID[i], "Ready");
+}
+
+PUSH Set_Source_Hidden
+{
+    integer i;
+    i = getLastModifiedArrayIndex();
+    _driver.SetSourceState(Source_ID[i], "Hidden");
+}
+
+Function Main()
+{
+    WaitForInitializationComplete();
+    RegisterDelegate(_driver, OnSourceChanged, OnSourceChange);
+}

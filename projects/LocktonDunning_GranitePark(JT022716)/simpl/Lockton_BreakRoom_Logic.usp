@@ -1,0 +1,52 @@
+#SYMBOL_NAME "Lockton BreakRoom Logic v1.0"
+#CATEGORY "46"
+#DEFAULT_VOLATILE
+#ENABLE_STACK_CHECKING
+
+#HELP_BEGIN
+Project-Specific Logic for Break Room 09.002
+-------------------------------------------
+This logic module takes simple source selection pulses from the Break Room 
+touchpanel and automatically orchestrates the Video Wall power commands and 
+hardcoded NVX destination routing.
+
+INPUTS:
+[Source_PC_Press]       : Pulse to select the PC source.
+[Source_AirMedia_Press] : Pulse to select the AirMedia source.
+[Source_Off_Press]      : Pulse to power down the Video Wall.
+
+OUTPUTS:
+[NVX_Route_Address]     : Serial string containing the target Multicast IP to route. Connect to NVX RouteManager.
+[Display_Power_On]      : High pulse to power on the Video Wall. Connect to Planar Display Driver.
+[Display_Power_Off]     : High pulse to power off the Video Wall. Connect to Planar Display Driver.
+#HELP_END
+
+DIGITAL_INPUT Source_PC_Press, Source_AirMedia_Press, Source_Off_Press;
+
+STRING_OUTPUT NVX_Route_Address;
+DIGITAL_OUTPUT Display_Power_On, Display_Power_Off;
+
+PUSH Source_PC_Press
+{
+    Display_Power_On = 1;
+    Display_Power_Off = 0;
+    NVX_Route_Address = "172.22.20.10";
+}
+
+PUSH Source_AirMedia_Press
+{
+    Display_Power_On = 1;
+    Display_Power_Off = 0;
+    NVX_Route_Address = "172.22.21.10";
+}
+
+PUSH Source_Off_Press
+{
+    Display_Power_Off = 1;
+    Display_Power_On = 0;
+}
+
+Function Main()
+{
+    WaitForInitializationComplete();
+}

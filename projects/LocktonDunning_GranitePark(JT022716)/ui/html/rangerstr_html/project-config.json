@@ -1,0 +1,13 @@
+{
+  "projectName": "rangerstr",
+  "version": "1.0.0",
+  "type": "ch5",
+  "ch5": {
+    "doNotTranslate": true,
+    "webXPanel": false
+  },
+  "capabilities": {
+    "video": false,
+    "annotation": false
+  }
+}

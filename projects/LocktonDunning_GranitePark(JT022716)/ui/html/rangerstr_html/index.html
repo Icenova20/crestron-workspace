@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <!-- Prevent Caching -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    
+    <title>Rangers Training Room - Room Control</title>
+    <link rel="icon" type="image/png" href="img/rangers_logo.png">
+    <link rel="stylesheet" href="css/style.css?v=23">
+    <link rel="stylesheet" href="css/debug.css">
+</head>
+<body>
+    <div id="app-background"></div>
+    <div class="app-container">
+        
+        <!-- Persistent Header -->
+        <header class="main-header">
+            <div class="header-left">
+                <img src="img/taurus_logo.png" alt="Taurus Tech" style="height: 60px;" id="taurus-logo">
+            </div>
+            <div class="header-center">
+                <img src="img/rangers_logo.png" alt="Rangers Logo" class="logo-circle" style="width: 80px; height: 80px; background: transparent; border: none;">
+                <h1>Rangers Training Room</h1>
+            </div>
+            <div class="header-right">
+                <button class="header-btn" id="btn-led-brightness">LED<br>Brightness</button>
+                <button class="header-btn status-btn" id="btn-cloud-cover">
+                    Cloud Cover<br>Music: <span id="cloud-status">Off</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Routing View -->
+        <main id="view-routing" class="view active">
+            <!-- Source Selection -->
+            <div class="sources-row">
+                <button class="source-btn" data-id="wallplate">
+                    <div class="icon">💻</div>
+                    <div class="label">Wallplate</div>
+                </button>
+                <button class="source-btn" data-id="cable1">
+                    <div class="icon">📡</div>
+                    <div class="label">Cable Box 1</div>
+                </button>
+                <button class="source-btn" data-id="cable2">
+                    <div class="icon">📡</div>
+                    <div class="label">Cable Box 2</div>
+                </button>
+                <button class="source-btn" data-id="appspace">
+                    <img src="img/appspace.svg?v=2" alt="Appspace" class="icon-img" style="width: 60px; height: 60px; margin-bottom: 10px;">
+                    <div class="label">Appspace</div>
+                </button>
+                <button class="source-btn" data-id="clickshare">
+                    <div class="icon">🔘</div>
+                    <div class="label">Clickshare</div>
+                </button>
+                <button class="source-btn" data-id="off">
+                    <img src="img/power.svg" alt="Off" class="icon-img" style="width: 60px; height: 60px; margin-bottom: 10px;">
+                    <div class="label">Off</div>
+                </button>
+            </div>
+
+            <div class="main-stage">
+                <!-- Camera Controls Trigger -->
+                <div class="left-controls">
+                    <!-- Static Buttons, toggled by JS -->
+                    <button class="action-btn" id="btn-cam-controls">
+                        <div class="icon">📹</div>
+                        <div class="label">Camera Controls</div>
+                    </button>
+                    
+                    <button class="action-btn hidden" id="btn-cable-controls" style="margin-top:20px;">
+                        <img src="img/remote.svg" alt="Remote" class="icon-img" style="width: 80px; height: 80px; margin-bottom: 15px;">
+                        <div class="label">Cable Remote</div>
+                    </button>
+                </div>
+
+                <!-- Main Display Area / Drop Zone -->
+                <div class="display-area">
+                    <div class="display-label" id="display-title-label">Display</div>
+                    <div class="display-content" id="main-display-content">
+                        <div class="placeholder-msg">Select a source to begin</div>
+                    </div>
+                </div>
+
+                <!-- Volume Control -->
+                <div class="right-controls">
+                    <div class="vol-slider-container">
+                        <input type="range" orient="vertical" min="0" max="100" value="50" class="vol-slider-vertical" id="master-vol">
+                        <div class="vol-fill"></div>
+                    </div>
+                    <div class="vol-text" id="master-vol-text">-100%</div>
+                    <button class="mute-btn" id="master-mute">Mute</button>
+                </div>
+            </div>
+        </main>
+
+        <!-- Modals / Overlays Container -->
+        <div id="modal-container" class="hidden">
+            
+            <!-- LED Brightness Modal -->
+            <div id="modal-led" class="modal-content small-modal">
+                <div class="modal-list">
+                    <button class="list-btn" data-val="0">0%</button>
+                    <button class="list-btn" data-val="25">25%</button>
+                    <button class="list-btn" data-val="50">50%</button>
+                    <button class="list-btn" data-val="75">75%</button>
+                    <button class="list-btn" data-val="100">100%</button>
+                </div>
+            </div>
+
+            <!-- Cable Box Control Modal -->
+            <div id="modal-cable" class="modal-content full-modal red-theme">
+                <div class="modal-header">
+                    <h2 id="cable-modal-title">Cable Box Controls</h2>
+                    <button class="close-btn">X</button>
+                </div>
+                <div class="modal-body cable-grid">
+                    <!-- D-Pad -->
+                    <div class="dpad-section">
+                        <div class="dpad">
+                            <button class="dpad-btn up" data-cmd="up">▲</button>
+                            <button class="dpad-btn left" data-cmd="left">◀</button>
+                            <button class="dpad-btn center" data-cmd="ok">OK</button>
+                            <button class="dpad-btn right" data-cmd="right">▶</button>
+                            <button class="dpad-btn down" data-cmd="down">▼</button>
+                        </div>
+                    </div>
+
+                    <!-- Numpad -->
+                    <div class="numpad-section">
+                        <button class="num-btn" data-cmd="1">1</button>
+                        <button class="num-btn" data-cmd="2">2</button>
+                        <button class="num-btn" data-cmd="3">3</button>
+                        <button class="num-btn" data-cmd="4">4</button>
+                        <button class="num-btn" data-cmd="5">5</button>
+                        <button class="num-btn" data-cmd="6">6</button>
+                        <button class="num-btn" data-cmd="7">7</button>
+                        <button class="num-btn" data-cmd="8">8</button>
+                        <button class="num-btn" data-cmd="9">9</button>
+                        <button class="num-btn small-text" data-cmd="prev_channel">Prev</button>
+                        <button class="num-btn" data-cmd="0">0</button>
+                        <button class="num-btn small-text" data-cmd="enter">Enter</button>
+                    </div>
+
+                    <!-- Nav Controls -->
+                    <div class="nav-section">
+                        <div class="ch-rocker">
+                            <button class="rocker-btn" data-cmd="ch_up">▲</button>
+                            <div class="rocker-label">Channel/Page</div>
+                            <button class="rocker-btn" data-cmd="ch_down">▼</button>
+                        </div>
+                        <div class="menu-btns">
+                            <button class="menu-btn" data-cmd="guide">Guide</button>
+                            <button class="menu-btn" data-cmd="menu">Menu</button>
+                            <button class="menu-btn" data-cmd="info">Info</button>
+                            <button class="menu-btn" data-cmd="exit">Exit</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Camera Control Modal -->
+            <div id="modal-camera" class="modal-content full-modal red-theme">
+                <div class="modal-header">
+                    <h2>Camera Controls</h2>
+                    <button class="close-btn">X</button>
+                </div>
+                <div class="modal-body camera-grid">
+                    <!-- Cam Select -->
+                    <div class="cam-select-section">
+                        <button class="cam-sel-btn active" data-id="podium">
+                            <div class="checkbox"></div> Podium Camera
+                        </button>
+                        <button class="cam-sel-btn" data-id="room">
+                            <div class="checkbox"></div> Room Camera
+                        </button>
+                    </div>
+
+                    <!-- PTZ Pad -->
+                    <div class="ptz-section">
+                        <div class="dpad">
+                            <button class="dpad-btn up" data-cmd="tilt_up">▲</button>
+                            <button class="dpad-btn left" data-cmd="pan_left">◀</button>
+                            <button class="dpad-btn center disabled"></button>
+                            <button class="dpad-btn right" data-cmd="pan_right">▶</button>
+                            <button class="dpad-btn down" data-cmd="tilt_down">▼</button>
+                        </div>
+                        <div class="zoom-controls">
+                            <button class="zoom-btn" data-cmd="zoom_out">🔍 -</button>
+                            <button class="zoom-btn" data-cmd="zoom_in">🔍 +</button>
+                        </div>
+                    </div>
+
+                    <!-- Presets -->
+                    <div class="preset-section">
+                        <div class="preset-status"><span class="status-saved">Saved</span></div>
+                        <div class="preset-row">
+                            <button class="preset-btn" data-id="1">1</button>
+                            <button class="preset-btn" data-id="2">2</button>
+                            <button class="preset-btn" data-id="3">3</button>
+                            <button class="preset-btn" data-id="4">4</button>
+                            <button class="preset-btn" data-id="5">5</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+             <!-- Admin Modal -->
+            <div id="modal-admin" class="modal-content full-modal dark-theme">
+                 <div class="modal-header">
+                    <h2>Admin Controls</h2>
+                    <button class="close-btn red-bg">Close</button>
+                </div>
+                <div class="modal-body admin-grid">
+                     <div class="admin-col">
+                         <h3>Auto Power On*</h3>
+                         <button class="admin-time-btn" data-type="on" data-val="5am">5 AM</button>
+                         <button class="admin-time-btn" data-type="on" data-val="6am">6 AM</button>
+                         <button class="admin-time-btn" data-type="on" data-val="7am">7 AM</button>
+                         <button class="admin-time-btn" data-type="on" data-val="8am">8 AM</button>
+                         <button class="admin-time-btn" data-type="on" data-val="9am">9 AM</button>
+                         <button class="admin-time-btn" data-type="on" data-val="10am">10 AM</button>
+                         <button class="admin-time-btn" data-type="on" data-val="disable">Disable</button>
+                     </div>
+                     <div class="admin-col">
+                         <h3>Auto Power Off</h3>
+                         <button class="admin-time-btn" data-type="off" data-val="4pm">4 PM</button>
+                         <button class="admin-time-btn" data-type="off" data-val="5pm">5 PM</button>
+                         <button class="admin-time-btn" data-type="off" data-val="6pm">6 PM</button>
+                         <button class="admin-time-btn" data-type="off" data-val="7pm">7 PM</button>
+                         <button class="admin-time-btn" data-type="off" data-val="8pm">8 PM</button>
+                         <button class="admin-time-btn" data-type="off" data-val="9pm">9 PM</button>
+                         <button class="admin-time-btn" data-type="off" data-val="disable">Disable</button>
+                     </div>
+                </div>
+                 <div class="admin-footer">
+                     * Auto Power On Only Works On Weekdays
+                 </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- <div id="debug-console" style="display:block; position: absolute; bottom: 0; left: 0; width: 100%; height: 150px; background: rgba(0,0,0,0.8); color: lime; font-family: monospace; font-size: 12px; overflow-y: auto; z-index: 9999; padding: 5px; pointer-events: none;"></div> -->
+    <script src="js/cr-com-lib.js"></script>
+    <script src="js/app.js?v=16"></script>
+</body>
+</html>

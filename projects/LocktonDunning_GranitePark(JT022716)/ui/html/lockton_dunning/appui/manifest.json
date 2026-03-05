@@ -1,0 +1,8 @@
+{
+  "appName": "Rangers Training Room",
+  "appType": "ch5",
+  "version": "1.0.0",
+  "iconUrl": "img/rangers_logo.png",
+  "rating": "G",
+  "requiredOn": [ "panel" ]
+}

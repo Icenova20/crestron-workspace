@@ -1,0 +1,14 @@
+name: ch5-workspace
+services:
+  nginx:
+    container_name: ch5-dev
+    image: nginx:latest
+    restart: unless-stopped
+    environment:
+      - TZ=America/Chicago
+    ports:
+      - "8001:80"
+    command: [nginx, '-g', 'daemon off;', '-c', '/etc/nginx/custom/nginx.conf']
+    volumes:
+      - ./nginx.conf:/etc/nginx/custom/nginx.conf:ro
+      - ./html:/usr/share/nginx/html

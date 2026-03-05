@@ -1,0 +1,31 @@
+# Crestron SIMPL Windows / SIMPL+ Temporary Files
+**/SPlsWork/
+*.err
+*.pzt
+*.sig
+*.smw.bak
+*.umc.bak
+*.usp.bak
+
+# SIMPL# (C#) Build Artifacts
+**/obj/
+**/bin/
+.vs/
+*.user
+*.suo
+
+# CH5 Build Artifacts
+**/node_modules/
+**/dist/
+**/temp/
+*.ch5
+*.ch5z
+
+
+# Build system and local state
+build_output.txt
+build_summary.txt
+*.log
+diff.txt
+build_trace.log
+

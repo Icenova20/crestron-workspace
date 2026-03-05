@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- Remote Body -->
+  <rect x="25" y="10" width="50" height="80" rx="10" ry="10" fill="#333" stroke="#666" stroke-width="2"/>
+  
+  <!-- Screen/IR Window -->
+  <rect x="35" y="15" width="30" height="10" rx="2" fill="#222"/>
+  
+  <!-- D-Pad Area -->
+  <circle cx="50" cy="40" r="12" fill="#444"/>
+  <circle cx="50" cy="40" r="4" fill="#555"/>
+  
+  <!-- Button Grid -->
+  <rect x="35" y="60" width="10" height="5" rx="2" fill="#888"/>
+  <rect x="55" y="60" width="10" height="5" rx="2" fill="#888"/>
+  
+  <rect x="35" y="70" width="10" height="5" rx="2" fill="#888"/>
+  <rect x="55" y="70" width="10" height="5" rx="2" fill="#888"/>
+  
+  <rect x="35" y="80" width="10" height="5" rx="2" fill="#888"/>
+  <rect x="55" y="80" width="10" height="5" rx="2" fill="#888"/>
+</svg>

@@ -1,0 +1,58 @@
+#SYMBOL_NAME "Shure MXA920 v1.0"
+#CATEGORY "46"
+#DEFAULT_VOLATILE
+#ENABLE_STACK_CHECKING
+
+#HELP_BEGIN
+Modular Shure MXA920 Ceiling Microphone Driver
+----------------------------------------------
+Provides TCP/IP control for the Shure MXA920 Ceiling Array microphone.
+
+INPUTS:
+[Initialize] : Pulse to initialize the C# driver and establish the TCP connection.
+[Mute_On]    : Pulse to mute the entire ceiling array.
+[Mute_Off]   : Pulse to unmute the array.
+
+OUTPUTS:
+[Mute_FB]    : High when the microphone array is natively muted.
+
+PARAMETERS:
+[IP_Address] : Serial string containing the IPv4 address of the Shure MXA920 microphone (e.g., "172.22.30.15").
+#HELP_END
+
+#USER_SIMPLSHARP_LIBRARY "ShureMxa920"
+
+DIGITAL_INPUT  Initialize;
+DIGITAL_INPUT  Mute_On, Mute_Off;
+
+DIGITAL_OUTPUT Mute_FB;
+
+STRING_PARAMETER _SKIP_, _SKIP_, _SKIP_, IP_Address[50];
+
+#BEGIN_PARAMETER_PROPERTIES IP_Address
+   propValidUnits = unitString;
+   propDefaultUnit = unitString;
+   propDefaultValue = "";
+#END_PARAMETER_PROPERTIES
+
+Mxa920Driver _driver;
+
+CALLBACK FUNCTION OnMuteChange()
+{
+    Mute_FB = _driver.CurrentMuteState;
+}
+
+PUSH Initialize
+{
+    _driver.Initialize(IP_Address);
+    _driver.Connect();
+}
+
+PUSH Mute_On  { _driver.SetMute(1); }
+PUSH Mute_Off { _driver.SetMute(0); }
+
+Function Main()
+{
+    WaitForInitializationComplete();
+    RegisterDelegate(_driver, OnMuteChanged, OnMuteChange);
+}

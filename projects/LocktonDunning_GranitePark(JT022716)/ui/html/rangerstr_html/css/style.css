@@ -1,0 +1,706 @@
+:root {
+    /* Updated 2025-12-15 v2 */
+    --bg-color: #000000;
+    --rangers-blue: #003278;
+    --rangers-red: #C0111F;
+    --text-white: #ffffff;
+    --overlay-bg: rgba(192, 17, 31, 0.95); /* Red with opacity */
+    --modal-bg-dark: rgba(20, 20, 20, 0.95);
+    --btn-bg: #e0e0e0;
+    --btn-text: #333;
+    --btn-active: #00a3e0; /* Cyan-ish selection color from screenshot */
+    --dpad-bg: #333;
+    --border-radius: 10px;
+    --spacing: 15px;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-white);
+    height: 100vh;
+    overflow: hidden;
+    position: relative;
+}
+
+/* Background Placeholder - mimicks stadium view */
+#app-background {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    /* Use the routing screenshot as the background image */
+    background-image: url('../img/bg.jpg');
+    background-size: cover;
+    background-position: center;
+    /* Darken it slightly so controls pop */
+    filter: brightness(0.6);
+    z-index: -1;
+}
+
+.app-container {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    position: relative; /* Ensure it respects z-index */
+    z-index: 10; /* Force above background */
+}
+
+/* --- Header --- */
+.main-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 20px;
+}
+
+.header-left, .header-right {
+    flex: 1;
+    display: flex;
+    gap: 15px;
+}
+
+.header-right {
+    justify-content: flex-end;
+}
+
+.header-center {
+    flex: 2;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+}
+
+.logo-placeholder {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #cc0000;
+}
+
+.logo-circle {
+    cursor: pointer; /* Indicate clickable for Admin */
+    border-radius: 50%; /* Crop white corners */
+    object-fit: cover; /* Ensure image fills the circle */
+}
+
+h1 {
+    font-size: 2.5rem;
+    font-weight: normal;
+}
+
+.header-btn {
+    background: #333;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1.3rem;
+    text-shadow:
+        -1px -1px 0 #000,
+         1px -1px 0 #000,
+        -1px  1px 0 #000,
+         1px  1px 0 #000;
+}
+
+.status-btn {
+    background: var(--rangers-red); /* Default to red (off state) */
+}
+
+.status-btn.on-state {
+    background: #0f0; /* Green for on state */
+}
+
+#cloud-status {
+    color: #ff9999;
+    font-weight: bold;
+    text-shadow:
+        -1px -1px 0 #000,
+         1px -1px 0 #000,
+        -1px  1px 0 #000,
+         1px  1px 0 #000;
+}
+
+/* --- Main Views --- */
+.view {
+    display: none; /* Hidden by default */
+    flex: 1;
+    flex-direction: column;
+}
+
+.view.active {
+    display: flex;
+}
+
+/* Routing View */
+.sources-row {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    margin-bottom: 20px;
+}
+
+.source-btn {
+    background: #333; /* Changed from rgba(255,255,255,0.8) */
+    color: white;    /* Added for dark background */
+    border: none;
+    border-radius: 20px;
+    width: 160px;
+    height: 160px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: transform 0.1s;
+}
+
+.source-btn:active {
+    transform: scale(0.95);
+}
+
+.source-btn.active {
+    background: var(--btn-active);
+    color: white;
+    box-shadow: 0 0 15px var(--btn-active);
+}
+
+.source-btn .icon {
+    font-size: 3rem;
+    margin-bottom: 10px;
+}
+
+.source-btn .label {
+    font-size: 1.2rem;
+    font-weight: bold;
+}
+
+.main-stage {
+    flex: 1;
+    display: flex;
+    gap: 20px;
+}
+
+.left-controls, .right-controls {
+    width: 240px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.display-area {
+    flex: 1;
+    background: rgba(255,255,255,0.1);
+    border: 2px solid #555;
+    border-radius: 10px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+.display-label {
+    text-align: right;
+    padding: 10px;
+    font-size: 1.2rem;
+    color: #aaa;
+}
+
+.display-content {
+    flex: 1;
+    display: flex; /* Added */
+    flex-direction: column; /* Added */
+    align-items: center; /* Added */
+    justify-content: center; /* Added */
+    /* This represents the main screen content */
+}
+
+/* Volume Vertical Slider */
+.vol-slider-container {
+    height: 280px;
+    width: 60px;
+    background: #333;
+    border-radius: 20px;
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 20px; /* Increased margin */
+}
+
+.vol-fill {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 0%; /* Initial height */
+    background: var(--btn-active); /* Active color */
+    border-radius: 20px;
+    transition: height 0.1s ease-out; /* Smooth transition */
+}
+
+.vol-slider-vertical {
+    -webkit-appearance: none;
+    width: 280px; /* Width becomes height due to rotation */
+    height: 60px; /* Height becomes width */
+    background: transparent;
+    position: absolute;
+    top: 110px; /* Center it roughly (280/2 - 60/2) */
+    left: -110px;
+    transform: rotate(-90deg);
+    outline: none;
+    cursor: pointer;
+    position: relative; /* Create a stacking context */
+    z-index: 1; /* Ensure knob is above the fill */
+}
+
+.vol-slider-vertical::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 60px; /* Visual height along track */
+    height: 60px; /* Visual width across track */
+    background: white;
+    border-radius: 5px; /* Square with slight rounding */
+    cursor: pointer;
+    box-shadow: 0 0 5px rgba(0,0,0,0.5);
+}
+
+.vol-text {
+    font-size: 1.2rem;
+    margin-bottom: 15px;
+}
+
+.mute-btn {
+    padding: 25px 40px;
+    background: #333; /* Changed to match dark buttons */
+    color: white;      /* Changed to white for dark background */
+    border: none;
+    border-radius: 5px;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 1.5rem;
+}
+
+.mute-btn.muted {
+    background: var(--rangers-red);
+    color: white;
+}
+
+.action-btn {
+    background: #333;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    padding: 20px;
+    width: 220px; /* Increased width */
+    height: 220px; /* Increased height */
+    cursor: pointer;
+}
+
+.action-btn .icon {
+    font-size: 5rem;
+    background: var(--rangers-blue);
+    border-radius: 15px;
+    width: 80px; /* Increased to fit larger icon */
+    height: 80px; /* Increased to fit larger icon */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 15px;
+}
+
+.action-btn .label {
+    font-size: 1.3rem;
+    font-weight: bold;
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* --- Modals --- */
+#modal-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1000;
+    pointer-events: none; /* Allow clicks through if no modal is active, handled by JS toggling class */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#modal-container.active {
+    pointer-events: auto;
+    background: rgba(0,0,0,0.5);
+}
+
+#modal-container.hidden {
+    display: none;
+}
+
+.modal-content {
+    display: none; /* Hidden by default */
+}
+
+.modal-content.active {
+    display: flex;
+}
+
+/* LED Brightness Dropdown Style */
+.small-modal {
+    position: absolute;
+    top: 80px;
+    right: 180px;
+    flex-direction: column;
+    background: black;
+    border: 2px solid white;
+}
+
+.list-btn {
+    background: #222;
+    color: white;
+    border: none;
+    padding: 15px 30px;
+    font-size: 1.2rem;
+    border-bottom: 1px solid #444;
+    cursor: pointer;
+}
+
+.list-btn:hover {
+    background: #444;
+}
+
+.list-btn.active {
+    background: var(--btn-active); /* Light blue from root */
+    color: white;
+    font-weight: bold;
+}
+
+/* Full Screen Red Overlays */
+.full-modal {
+    width: 90%;
+    height: 85%;
+    flex-direction: column;
+    border: 2px solid white;
+    color: white;
+    padding: 20px;
+    position: relative;
+}
+
+.red-theme {
+    background: var(--overlay-bg);
+}
+
+.dark-theme {
+    background: var(--modal-bg-dark);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    margin-bottom: 30px;
+}
+
+.modal-header h2 {
+    font-size: 2rem;
+    color: white;
+}
+
+.close-btn {
+    position: absolute;
+    right: 0;
+    top: 0;
+    background: #ddd;
+    color: #c00;
+    font-weight: bold;
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    border: none;
+    font-size: 2rem;
+    cursor: pointer;
+}
+
+.close-btn.red-bg {
+    background: var(--rangers-red);
+    color: white;
+    width: auto;
+    padding: 10px 30px;
+    border-radius: 5px;
+    font-size: 1rem;
+}
+
+/* Grid Layouts */
+.modal-body {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 50px;
+}
+
+/* Cable Box Grid */
+.cable-grid {
+    display: flex;
+    gap: 80px;
+}
+
+.dpad-section, .numpad-section, .nav-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.dpad {
+    display: grid;
+    grid-template-columns: repeat(3, 90px);
+    grid-template-rows: repeat(3, 90px);
+    gap: 5px;
+    background: #222;
+    padding: 10px;
+    border-radius: 50%;
+}
+
+.dpad-btn {
+    background: transparent; /* Make arrow buttons transparent */
+    border: none;
+    color: white;
+    cursor: pointer;
+    border-radius: 5px;
+    font-size: 1.8rem;
+}
+.dpad-btn.up { grid-column: 2; grid-row: 1; }
+.dpad-btn.down { grid-column: 2; grid-row: 3; }
+.dpad-btn.left { grid-column: 1; grid-row: 2; }
+.dpad-btn.right { grid-column: 3; grid-row: 2; }
+.dpad-btn.center { 
+    grid-column: 2; grid-row: 2; 
+    border-radius: 50%; 
+    background: #666; /* Keep center button background */
+}
+
+.numpad-section {
+    display: grid;
+    grid-template-columns: repeat(3, 100px);
+    gap: 5px;
+}
+
+.num-btn {
+    height: 100px;
+    background: #222;
+    color: white;
+    border: none;
+    font-size: 2.2rem;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+}
+.num-btn.small-text { font-size: 0.8rem; }
+
+.nav-section {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+    margin-top: -50px; /* Adjust as needed */
+}
+
+.ch-rocker {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: #222;
+    border-radius: 30px;
+    padding: 10px;
+}
+
+.rocker-btn {
+    background: transparent;
+    border: none;
+    color: white;
+    font-size: 3rem;
+    cursor: pointer;
+    padding: 20px;
+}
+
+.rocker-label {
+    margin: 10px 0;
+    font-size: 0.9rem;
+}
+
+.menu-btns {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.menu-btn {
+    background: #333;
+    color: white;
+    padding: 25px;
+    width: 160px;
+    border: none;
+    cursor: pointer;
+}
+
+/* Camera Grid */
+.camera-grid {
+    flex-direction: column;
+    gap: 20px;
+}
+
+.cam-select-section {
+    display: flex;
+    gap: 20px;
+}
+
+.cam-sel-btn {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 25px 45px;
+    background: #333;
+    color: white;
+    border: none;
+    cursor: pointer;
+    font-size: 1.2rem;
+}
+
+.cam-sel-btn .checkbox {
+    width: 30px;
+    height: 30px;
+    border: 2px solid white;
+}
+
+.cam-sel-btn.active .checkbox {
+    background: white;
+}
+
+.ptz-section {
+    display: flex;
+    align-items: center;
+    gap: 50px;
+}
+
+.zoom-controls {
+    display: flex;
+    gap: 10px;
+}
+
+.zoom-btn {
+    width: 180px;
+    height: 180px;
+    font-size: 3.75rem;
+    background: #333;
+    color: white;
+    border: none;
+    cursor: pointer;
+}
+
+.preset-section {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.preset-status {
+    color: #0f0;
+    font-weight: bold;
+    font-size: 2rem;
+    /* margin-left: 10px; removed */
+    /* display: none; removed */
+    white-space: nowrap; /* Prevent wrapping */
+}
+
+/* Ensure "Presets" label is always visible, but "Saved" part toggles */
+.preset-status::before {
+    content: "Presets";
+    color: white;
+    margin-right: 10px;
+}
+
+.status-saved {
+    display: none;
+}
+
+.status-saved.visible {
+    display: inline;
+}
+
+.preset-row {
+    display: flex;
+    gap: 15px;
+    margin-top: 0; /* Removed top margin */
+}
+
+.preset-btn {
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    background: #333;
+    color: white;
+    border: none;
+    font-size: 2.2rem;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+}
+
+/* Admin Grid */
+.admin-grid {
+    display: flex;
+    gap: 100px;
+    align-items: flex-start;
+}
+
+.admin-col {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.admin-col h3 {
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+.admin-time-btn {
+    padding: 17px 50px;
+    background: #333;
+    color: white;
+    border: none;
+    cursor: pointer;
+    font-size: 1.25rem;
+    margin-bottom: 5px; /* Add slight spacing */
+}
+
+.admin-time-btn:hover {
+    background: #555;
+}
+
+.admin-time-btn.active {
+    background: var(--btn-active);
+    color: white;
+    box-shadow: 0 0 10px var(--btn-active);
+}
+
+.admin-footer {
+    text-align: center;
+    margin-top: 20px;
+    font-style: italic;
+    color: #aaa;
+}

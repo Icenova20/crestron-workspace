@@ -1,0 +1,203 @@
+#SYMBOL_NAME "Lockton Training Logic v1.0"
+#CATEGORY "46"
+#DEFAULT_VOLATILE
+#ENABLE_STACK_CHECKING
+
+#HELP_BEGIN
+Master Logic Orchestrator for Training Room 09.091
+--------------------------------------------------
+This module is the "Brain" of the room. It receives raw button presses 
+from the TSW-1070 and orchestrates the necessary commands to the 
+Cisco, Planar, Shure MXA920, and NVX RouteManager symbols.
+
+It also receives feedback from those hardware drivers and translates 
+it into button feedback for the touchpanel.
+
+INPUTS:
+[TP_Source_PC_Press]       : Pulse from touchpanel to select PC source.
+[TP_Source_AirMedia_Press] : Pulse from touchpanel to select AirMedia source.
+[TP_Source_Off_Press]      : Pulse from touchpanel to turn off video routing.
+[TP_System_Off_Press]      : Pulse from touchpanel to shut down the entire room.
+[TP_Mic_Mute_Toggle]       : Pulse from touchpanel to toggle ceiling mic privacy.
+
+[Cisco_Active_Source_FB]   : Serial feedback from the Cisco Codec matching the active Source_ID.
+[Cisco_Standby_FB]         : High when the Cisco Codec goes into standby.
+[Shure_Mxw_Mute_FB]        : Array (1-8). High when any wireless MXW mic is muted internally.
+
+OUTPUTS:
+[TP_Source_PC_FB]          : High when the Cisco Codec registers "PC" as the active source.
+[TP_Source_AirMedia_FB]    : High when the Cisco Codec registers "AirMedia" as the active source.
+[TP_Source_Off_FB]         : High when the Cisco Codec registers "Hidden" as the active source.
+[TP_Mic_Muted_FB]          : High when the room microphones are muted.
+
+[Cisco_Set_Source_PC]      : Pulses to command the Cisco Codec to reveal the PC source.
+[Cisco_Set_Source_AirMedia]: Pulses to command the Cisco Codec to reveal the AirMedia source.
+[Cisco_Set_Source_Hidden]  : Pulses to hide all sources on the Cisco Codec.
+[Planar_Power_On]          : Pulses to power on the Video Wall.
+[Planar_Power_Off]         : Pulses to power off the Video Wall.
+[Shure_Mxa920_Mute_On]     : Pulses to force the ceiling mic array to mute.
+[Shure_Mxa920_Mute_Off]    : Pulses to force the ceiling mic array to unmute.
+[Shure_Mxw_Mute_On_All]    : Pulses to force all wireless mics to mute.
+[Shure_Mxw_Mute_Off_All]   : Pulses to force all wireless mics to unmute.
+
+[NVX_Route_Name]           : Exposes the Name of the target NVX Encoder to route.
+[NVX_Decoder_IP]           : Exposes the IP string of the target NVX Decoder.
+[NVX_Do_Route]             : Pulses to command the NVX Route Manager to execute the defined route.
+
+PARAMETERS:
+[NVX_Room_Decoder_Left_IP] : The IP address of the NVX Receiver behind the Left Planar Display.
+[NVX_Room_Decoder_Right_IP]: The IP address of the NVX Receiver behind the Right Planar Display.
+#HELP_END
+
+// --- TOUCHPANEL INPUTS ---
+DIGITAL_INPUT  TP_Source_PC_Press;
+DIGITAL_INPUT  TP_Source_AirMedia_Press;
+DIGITAL_INPUT  TP_Source_Off_Press;
+DIGITAL_INPUT  TP_System_Off_Press;
+DIGITAL_INPUT  TP_Mic_Mute_Toggle;
+
+// --- HARDWARE FEEDBACK INPUTS ---
+STRING_INPUT   Cisco_Active_Source_FB[50];
+DIGITAL_INPUT  Cisco_Standby_FB;
+DIGITAL_INPUT  Shure_Mxw_Mute_FB[8];
+
+// --- TOUCHPANEL FEEDBACK OUTPUTS ---
+DIGITAL_OUTPUT TP_Source_PC_FB;
+DIGITAL_OUTPUT TP_Source_AirMedia_FB;
+DIGITAL_OUTPUT TP_Source_Off_FB;
+DIGITAL_OUTPUT TP_Mic_Muted_FB;
+
+// --- HARDWARE COMMAND OUTPUTS ---
+DIGITAL_OUTPUT Cisco_Set_Source_PC;
+DIGITAL_OUTPUT Cisco_Set_Source_AirMedia;
+DIGITAL_OUTPUT Cisco_Set_Source_Hidden;
+DIGITAL_OUTPUT Planar_Power_On;
+DIGITAL_OUTPUT Planar_Power_Off;
+DIGITAL_OUTPUT Shure_Mxa920_Mute_On;
+DIGITAL_OUTPUT Shure_Mxa920_Mute_Off;
+DIGITAL_OUTPUT Shure_Mxw_Mute_On_All;
+DIGITAL_OUTPUT Shure_Mxw_Mute_Off_All;
+STRING_OUTPUT  NVX_Route_Name;
+STRING_OUTPUT  NVX_Decoder_IP;
+DIGITAL_OUTPUT NVX_Do_Route;
+
+STRING_PARAMETER _SKIP_, _SKIP_, _SKIP_, _SKIP_, _SKIP_, _SKIP_, _SKIP_, _SKIP_, _SKIP_, _SKIP_, _SKIP_, _SKIP_, _SKIP_, _SKIP_, _SKIP_, _SKIP_, NVX_Room_Decoder_Left_IP[50], NVX_Room_Decoder_Right_IP[50];
+
+#BEGIN_PARAMETER_PROPERTIES NVX_Room_Decoder_Left_IP, NVX_Room_Decoder_Right_IP
+   propValidUnits = unitString;
+   propDefaultUnit = unitString;
+   propDefaultValue = "";
+#END_PARAMETER_PROPERTIES
+
+// --- HELPER FUNCTIONS ---
+Function RouteNVX(STRING name)
+{
+    // Route Left Display
+    NVX_Route_Name = name;
+    NVX_Decoder_IP = NVX_Room_Decoder_Left_IP;
+    Pulse(10, NVX_Do_Route);
+    
+    delay(15); // Wait 150ms for the first pulse to clear natively in SIMPL+
+    
+    // Route Right Display
+    NVX_Route_Name = name;
+    NVX_Decoder_IP = NVX_Room_Decoder_Right_IP;
+    Pulse(10, NVX_Do_Route);
+}
+
+// --- LOGIC ---
+
+PUSH TP_Source_PC_Press
+{
+    // Route Video
+    RouteNVX("PC");
+    
+    // Command Hardware
+    Planar_Power_On = 1;
+    Planar_Power_Off = 0;
+    
+    Pulse(10, Cisco_Set_Source_PC);
+}
+
+PUSH TP_Source_AirMedia_Press
+{
+    // Route Video
+    RouteNVX("AirMedia");
+    
+    // Command Hardware
+    Planar_Power_On = 1;
+    Planar_Power_Off = 0;
+    
+    Pulse(10, Cisco_Set_Source_AirMedia);
+}
+
+PUSH TP_Source_Off_Press
+{
+    Planar_Power_Off = 1;
+    Planar_Power_On = 0;
+    
+    Pulse(10, Cisco_Set_Source_Hidden);
+}
+
+PUSH TP_System_Off_Press
+{
+    Planar_Power_Off = 1;
+    Planar_Power_On = 0;
+}
+
+PUSH TP_Mic_Mute_Toggle
+{
+    integer anyMuted;
+    integer i;
+    anyMuted = 0;
+    
+    // Check if any wireless mic is muted
+    for (i = 1 to 8)
+    {
+        if (Shure_Mxw_Mute_FB[i] = 1) 
+            anyMuted = 1;
+    }
+
+    // Toggle global privacy
+    if (anyMuted = 1)
+    {
+        Pulse(10, Shure_Mxw_Mute_Off_All);
+        Pulse(10, Shure_Mxa920_Mute_Off);
+    }
+    else
+    {
+        Pulse(10, Shure_Mxw_Mute_On_All);
+        Pulse(10, Shure_Mxa920_Mute_On);
+    }
+}
+
+CHANGE Cisco_Active_Source_FB
+{
+    TP_Source_PC_FB = (Cisco_Active_Source_FB = "PC");
+    TP_Source_AirMedia_FB = (Cisco_Active_Source_FB = "AirMedia");
+    TP_Source_Off_FB = (Cisco_Active_Source_FB = "Hidden");
+}
+
+CHANGE Shure_Mxw_Mute_FB
+{
+    integer idx;
+    idx = getLastModifiedArrayIndex();
+    
+    // Auto-sync the ceiling mic
+    if (Shure_Mxw_Mute_FB[idx] = 1)
+    {
+        Pulse(10, Shure_Mxa920_Mute_On);
+    }
+    else
+    {
+        Pulse(10, Shure_Mxa920_Mute_Off);
+    }
+    
+    // Sync the Touchpanel status
+    TP_Mic_Muted_FB = Shure_Mxw_Mute_FB[idx];
+}
+
+Function Main()
+{
+    WaitForInitializationComplete();
+}

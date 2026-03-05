@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <!-- Aggressive Cache Prevention -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    
+    <title>Lockton Dunning - Black Glass UI</title>
+    <link rel="stylesheet" href="css/style.css?v=13">
+</head>
+<body>
+    <div class="watermark-container">
+        <img src="img/lockton_logo.png" alt="">
+    </div>
+    <div class="app-container">
+        
+        <!-- Glass Header -->
+        <header class="main-header">
+            <div class="header-brand">
+                <div class="lockton-logo-text">LOCKTON <span>DUNNING</span></div>
+            </div>
+            <div class="header-right">
+                <div class="status-indicator">
+                    <div class="clock" id="clock-display">12:00 PM</div>
+                    <div class="date" id="date-display">Monday, Feb 23</div>
+                </div>
+                <button id="btn-settings" class="icon-btn-settings">
+                    <img src="img/settings.svg" alt="Settings">
+                </button>
+            </div>
+        </header>
+
+        <!-- Glass Sidebar -->
+        <nav class="sidebar">
+            <div class="sidebar-title">Presentation</div>
+            
+            <button class="nav-btn source-select" data-id="airmedia">
+                <img src="img/airmedia.svg" class="nav-icon" alt="AirMedia">
+                AirMedia
+            </button>
+            
+            <button class="nav-btn source-select" data-id="mediaplayer">
+                <img src="img/mediaplayer.svg" class="nav-icon" alt="Media Player">
+                Media Player
+            </button>
+
+            <button class="nav-btn power-off" id="btn-power-off">
+                <img src="img/power.svg" class="nav-icon" alt="Power Off">
+                System Off
+            </button>
+        </nav>
+
+        <!-- Right Side: Stage + Volume -->
+        <div class="right-side">
+            <main class="stage-container" style="flex: 1; display: flex; flex-direction: column;">
+                
+                <!-- Default View -->
+                <div id="view-empty" class="stage-card active">
+                    <img src="img/building.svg" class="active-source-icon" alt="Ready">
+                    <h2>Ready to Present</h2>
+                    <p class="sub-text" style="color: var(--text-gray);">Select a source to begin.</p>
+                </div>
+
+                <!-- AirMedia View -->
+                <div id="view-airmedia" class="stage-card">
+                    <img src="img/airmedia.svg" class="active-source-icon" alt="AirMedia">
+                    <h2>AirMedia Wireless</h2>
+                    <p class="sub-text">Video Wall Content Active</p>
+                    
+                    <div class="connection-guide">
+                        <div class="guide-step">
+                            <div class="step-num">1</div>
+                            <div class="step-text">Connect to<br><b>Lockton-Guest</b></div>
+                        </div>
+                        <div class="guide-step">
+                            <div class="step-num">2</div>
+                            <div class="step-text">Open the<br><b>AirMedia App</b></div>
+                        </div>
+                        <div class="guide-step">
+                            <div class="step-num">3</div>
+                            <div class="step-text">Enter Code on<br><b>Video Wall</b></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Media Player View -->
+                <div id="view-mediaplayer" class="stage-card">
+                    <img src="img/mediaplayer.svg" class="active-source-icon" alt="Media Player">
+                    <h2>Media Player</h2>
+                    <p class="sub-text">Video Wall Content Active</p>
+                </div>
+
+            </main>
+
+            <!-- Bottom Volume Bar -->
+            <div class="bottom-controls">
+                <div class="vol-label">Volume</div>
+                <div class="h-vol-container">
+                    <div class="vol-fill" id="master-vol-fill" style="width: 0%;"></div>
+                    <input type="range" min="0" max="65535" value="0" class="vol-input" id="master-vol">
+                </div>
+                <div id="master-vol-text">0%</div>
+                <button class="mute-btn" id="master-mute">Mute</button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Glass Modal -->
+    <div id="modal-settings" class="modal-overlay">
+        <div class="modal-window">
+            <div class="modal-header">
+                <h3 style="font-size: 2rem; font-weight: 200;">Room Settings</h3>
+                <button class="modal-close" id="btn-close-settings">✕</button>
+            </div>
+            <div class="modal-body">
+                <nav class="settings-nav">
+                    <button class="settings-tab active" data-tab="audio">Audio Zones</button>
+                    <button class="settings-tab" data-tab="mics">Microphones</button>
+                    <button class="settings-tab" data-tab="sonos">Sonos</button>
+                    <button class="settings-tab" data-tab="schedule">Scheduling</button>
+                </nav>
+                <div class="settings-content">
+                    <div id="tab-audio" class="tab-pane active">
+                        <div class="setting-row">
+                            <label class="setting-label">9F Restroom Volume</label>
+                            <input type="range" min="0" max="65535" class="h-slider" id="vol-restroom-9f">
+                            <button class="setting-btn" id="mute-restroom-9f">MUTE 9F</button>
+                        </div>
+                        <div class="setting-row" style="margin-top: 30px;">
+                            <label class="setting-label">10F Restroom Volume</label>
+                            <input type="range" min="0" max="65535" class="h-slider" id="vol-restroom-10f">
+                            <button class="setting-btn" id="mute-restroom-10f">MUTE 10F</button>
+                        </div>
+                    </div>
+                    <div id="tab-mics" class="tab-pane">
+                        <label class="setting-label">Handheld Mic Level</label>
+                        <input type="range" min="0" max="65535" class="h-slider" id="vol-mic-handheld">
+                        <label class="setting-label" style="margin-top:30px;">Bodypack Mic Level</label>
+                        <input type="range" min="0" max="65535" class="h-slider" id="vol-mic-bodypack">
+                    </div>
+                    <div id="tab-sonos" class="tab-pane">
+                        <div class="sonos-media-card">
+                            <img id="sonos-art" src="img/building.svg" alt="Album Art" class="sonos-art">
+                            <div class="sonos-info">
+                                <div id="sonos-title" class="sonos-title">Not Playing</div>
+                                <div id="sonos-artist" class="sonos-artist">Sonos BGM</div>
+                                <div id="sonos-album" class="sonos-album">-</div>
+                            </div>
+                        </div>
+                        <div style="display:flex; gap:30px; justify-content:center; margin-top:20px;">
+                            <button class="setting-btn" id="sonos-prev">⏮</button>
+                            <button class="setting-btn" id="sonos-play">⏯</button>
+                            <button class="setting-btn" id="sonos-next">⏭</button>
+                        </div>
+                        <hr style="margin: 30px 0; border: none; border-top: 1px solid rgba(255,255,255,0.1);">
+                        <label class="setting-label">Restroom Sonos Control</label>
+                        <div style="display:flex; gap:30px; justify-content:center;">
+                            <button class="setting-btn" id="sonos-restroom-prev">⏮</button>
+                            <button class="setting-btn" id="sonos-restroom-play">⏯</button>
+                            <button class="setting-btn" id="sonos-restroom-next">⏭</button>
+                        </div>
+                    </div>
+                    <div id="tab-schedule" class="tab-pane">
+                        <label class="setting-label">Auto Power On</label>
+                        <div class="setting-grid" id="sched-on-container" style="margin-bottom: 40px;">
+                            <button class="setting-btn" data-val="7am">7 AM</button>
+                            <button class="setting-btn" data-val="8am">8 AM</button>
+                            <button class="setting-btn" data-val="9am">9 AM</button>
+                            <button class="setting-btn" data-val="disable">OFF</button>
+                        </div>
+                        <label class="setting-label">Auto Power Off</label>
+                        <div class="setting-grid" id="sched-off-container">
+                            <button class="setting-btn" data-val="5pm">5 PM</button>
+                            <button class="setting-btn" data-val="6pm">6 PM</button>
+                            <button class="setting-btn" data-val="7pm">7 PM</button>
+                            <button class="setting-btn" data-val="disable">OFF</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/cr-com-lib.js"></script>
+    <script src="js/app.js?v=12"></script>
+</body>
+</html>
