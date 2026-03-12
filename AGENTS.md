@@ -4,7 +4,7 @@ This workspace is a standardized environment for Crestron SIMPL+ and SIMPL Windo
 
 ## Environment & Tools
 - **OS**: Windows 11 with WSL installed (Ubuntu/Debian).
-  - **WSL Stability**: Drive `D:` is persistently mounted to `/d/` via `/etc/fstab` with `metadata` enabled. Path translation errors are resolved. WSL uses `mirrored` networking mode for seamless host/guest communication.
+  - **WSL Stability**: Drive `D:` is persistently mounted to `/d/` (not `/mnt/d/`) via `/etc/fstab` with `metadata` enabled. Path translation errors are resolved. WSL uses `mirrored` networking mode for seamless host/guest communication.
 - **Primary IDE**: VS Code with Antigravity.
 - **Build Tool**: `tools/build-project.ps1`.
   - **Function**: Reconciles `projects/PROJECT_NAME/dependencies.json`.
