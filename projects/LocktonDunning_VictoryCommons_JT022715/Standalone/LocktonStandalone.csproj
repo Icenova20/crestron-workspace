@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <OutputType>Library</OutputType>
+    <AssemblyName>LocktonStandalone</AssemblyName>
+    <RootNamespace>LocktonStandalone</RootNamespace>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <Deterministic>true</Deterministic>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Crestron.SimplSharp.SDK.Program" Version="2.21.184" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\LogicCore\**/*.cs" LinkBase="LogicCore" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="BiampTesiraLib3">
+      <HintPath>lib\unzipped\BiampTesiraLib3.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="CCI_Library">
+      <HintPath>lib\unzipped\CCI_Library.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="ShureMxa920">
+      <HintPath>..\..\..\modules\simpl\unzipped_shure\ShureMxa920.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="PlanarDisplay">
+      <HintPath>..\..\..\modules\simpl\unzipped_planar\PlanarDisplay.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+  </ItemGroup>
+</Project>

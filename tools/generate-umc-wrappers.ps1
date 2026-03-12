@@ -32,13 +32,13 @@ function Import-UshMetadata {
     $module = @{
         Name      = $dict["Name"] -replace " \(Macro\)", ""
         SmplCName = $dict["SmplCName"]
-        MaxI      = [int]($dict["MaxVariableInputs"] ?? 0)
-        MaxI2     = [int]($dict["MaxVariableInputsList2"] ?? 0)
-        MaxO      = [int]($dict["MaxVariableOutputs"] ?? 0)
-        MaxO2     = [int]($dict["MaxVariableOutputsList2"] ?? 0)
-        NumFixedP = [int]($dict["NumFixedParams"] ?? 0)
-        MaxP      = [int]($dict["MaxVariableParams"] ?? 0)
-        TotalP    = [int]($dict["NumFixedParams"] ?? 0) + [int]($dict["MaxVariableParams"] ?? 0)
+        MaxI      = [int]$dict["MaxVariableInputs"]
+        MaxI2     = [int]$dict["MaxVariableInputsList2"]
+        MaxO      = [int]$dict["MaxVariableOutputs"]
+        MaxO2     = [int]$dict["MaxVariableOutputsList2"]
+        NumFixedP = [int]$dict["NumFixedParams"]
+        MaxP      = [int]$dict["MaxVariableParams"]
+        TotalP    = [int]$dict["NumFixedParams"] + [int]$dict["MaxVariableParams"]
         Inputs    = @()
         Outputs   = @()
         Params    = @()
@@ -138,10 +138,19 @@ function Import-UshMetadata {
     return $module
 }
 
-function Get-BaseName {
+function Get-Prefix {
     param([string]$name)
-    if ($name -match "^([^\[]+)\[") { return $matches[1] }
-    return $name
+    if ($name -match "^([^_]+)_") { return $matches[1] }
+    return "Global"
+}
+
+function Get-CoreName {
+    param([string]$name)
+    # Strip common suffixes
+    $core = $name -replace "(_fb|_out|_Pr|_Tgl|_Pulse|_s|_n|_b)$", ""
+    # Strip array indices
+    $core = $core -replace "\[\d+\]", ""
+    return $core
 }
 
 function New-UmcWrapper {
@@ -160,29 +169,86 @@ function New-UmcWrapper {
     
     Write-Host "Generating: $umcName [$category]" -ForegroundColor Cyan
     
-    $macroInputs = @()
-    $prevBase = ""
-    
-    foreach ($pin in $module.Inputs) {
-        $base = Get-BaseName $pin.Name
-        if ($prevBase -ne "" -and $base -ne $prevBase) {
-            $macroInputs += [PSCustomObject]@{ Name = "[~UNUSED~]"; IsGap = $true; IsGroup = $false }
+    $macroInputs = New-Object System.Collections.Generic.List[PSObject]
+    $macroOutputs = New-Object System.Collections.Generic.List[PSObject]
+
+    $digIn = $module.Inputs | Where-Object { $_.List -eq 1 }
+    $digOut = $module.Outputs | Where-Object { $_.List -eq 1 }
+    $anaIn = $module.Inputs | Where-Object { $_.List -eq 2 -and $_.SigType -eq "Analog" }
+    $anaOut = $module.Outputs | Where-Object { $_.List -eq 2 -and $_.SigType -eq "Analog" }
+    $serIn = $module.Inputs | Where-Object { $_.List -eq 2 -and $_.SigType -eq "Serial" }
+    $serOut = $module.Outputs | Where-Object { $_.List -eq 2 -and $_.SigType -eq "Serial" }
+
+    $script:tempMacroInputs = $macroInputs
+    $script:tempMacroOutputs = $macroOutputs
+
+    function Add-SemanticSection {
+        param($inPins, $outPins)
+        
+        $matchedOuts = New-Object System.Collections.Generic.HashSet[string]
+        $tempRows = New-Object System.Collections.Generic.List[PSObject]
+
+        # 1. Match Inputs to available Outputs
+        foreach ($in in $inPins) {
+            $core = Get-CoreName $in.Name
+            $match = $outPins | Where-Object { (Get-CoreName $_.Name) -eq $core -and -not $matchedOuts.Contains($_.Name) } | Select-Object -First 1
+            if ($match) {
+                $tempRows.Add([PSCustomObject]@{ In = $in; Out = $match; IsGap = $false })
+                [void]$matchedOuts.Add($match.Name)
+            }
+            else {
+                $tempRows.Add([PSCustomObject]@{ In = $in; Out = $null; IsGap = $false })
+            }
         }
-        $macroInputs += [PSCustomObject]@{ Name = $pin.Name; InnerId = $pin.InnerId; List = $pin.List; Tp = $pin.Tp; SigType = $pin.SigType; IsGap = $false; IsGroup = $false }
-        $prevBase = $base
-    }
-    
-    $macroOutputs = @()
-    $prevBase = ""
-    foreach ($pin in $module.Outputs) {
-        $base = Get-BaseName $pin.Name
-        if ($prevBase -ne "" -and $base -ne $prevBase) {
-            $macroOutputs += [PSCustomObject]@{ Name = "[~UNUSED~]"; IsGap = $true; IsGroup = $false }
+
+        # 2. Add remaining unmatched Outputs
+        foreach ($out in $outPins) {
+            if (-not $matchedOuts.Contains($out.Name)) {
+                $tempRows.Add([PSCustomObject]@{ In = $null; Out = $out; IsGap = $false })
+            }
         }
-        $macroOutputs += [PSCustomObject]@{ Name = $pin.Name; InnerId = $pin.InnerId; List = $pin.List; Tp = $pin.Tp; SigType = $pin.SigType; IsGap = $false; IsGroup = $false }
-        $prevBase = $base
+
+        if ($tempRows.Count -eq 0) { return }
+
+        # 3. Add to output list with prefix-based spacing
+        $prevPrefix = ""
+        foreach ($row in $tempRows) {
+            $inName = if ($row.In) { $row.In.Name } else { "" }
+            $outName = if ($row.Out) { $row.Out.Name } else { "" }
+            $currPrefix = if ($inName) { Get-Prefix $inName } else { Get-Prefix $outName }
+
+            if ($prevPrefix -ne "" -and $currPrefix -ne $prevPrefix) {
+                $script:tempMacroInputs.Add([PSCustomObject]@{ Name = "[~UNUSED~]"; IsGap = $true; IsGroup = $false })
+                $script:tempMacroOutputs.Add([PSCustomObject]@{ Name = "[~UNUSED~]"; IsGap = $true; IsGroup = $false })
+            }
+
+            # Symmetrical Padding
+            if ($row.In) { 
+                $script:tempMacroInputs.Add([PSCustomObject]@{ Name = $row.In.Name; InnerId = $row.In.InnerId; List = $row.In.List; Tp = $row.In.Tp; SigType = $row.In.SigType; IsGap = $false; IsGroup = $false }) 
+            }
+            else { 
+                $script:tempMacroInputs.Add([PSCustomObject]@{ Name = "[~UNUSED~]"; IsGap = $true; IsGroup = $false }) 
+            }
+
+            if ($row.Out) { 
+                $script:tempMacroOutputs.Add([PSCustomObject]@{ Name = $row.Out.Name; InnerId = $row.Out.InnerId; List = $row.Out.List; Tp = $row.Out.Tp; SigType = $row.Out.SigType; IsGap = $false; IsGroup = $false }) 
+            }
+            else { 
+                $script:tempMacroOutputs.Add([PSCustomObject]@{ Name = "[~UNUSED~]"; IsGap = $true; IsGroup = $false }) 
+            }
+
+            $prevPrefix = $currPrefix
+        }
+
+        # Section separator
+        $script:tempMacroInputs.Add([PSCustomObject]@{ Name = "[~UNUSED~]"; IsGap = $true; IsGroup = $false })
+        $script:tempMacroOutputs.Add([PSCustomObject]@{ Name = "[~UNUSED~]"; IsGap = $true; IsGroup = $false })
     }
-    
+
+    Add-SemanticSection $digIn $digOut
+    Add-SemanticSection $anaIn $anaOut
+    Add-SemanticSection $serIn $serOut
+
     $macroParams = @()
     foreach ($pin in $module.Params) {
         $macroParams += [PSCustomObject]@{ Name = $pin.Name; InnerId = $pin.InnerId; Tp = $pin.Tp }
@@ -361,21 +427,21 @@ UserSymTreeName=$category
     $content += "[`nObjTp=Sm`nH=6`nSmC=55`nNm=Argument Definition`nObjVer=1`nPrH=5`nCF=2"
     $content += "`nn1I=$($macroInputs.Count)`nn1O=$($macroOutputs.Count)"
     
-    $content += "`nmI=$($macroInputs.Count)"
-    foreach ($pin in $macroInputs) { $content += "`nI$($pin.MacroId)=$($pin.SgId)" }
+    $content += "`nmI=$($macroRows.Count)"
+    foreach ($row in $macroRows) { $content += "`nI$($row.MacroId)=$($row.InSgId)" }
     
-    $content += "`nmO=$($macroOutputs.Count)`ntO=$($macroOutputs.Count)"
-    foreach ($pin in $macroOutputs) { $content += "`nO$($pin.MacroId)=$($pin.SgId)" }
+    $content += "`nmO=$($macroRows.Count)`ntO=$($macroRows.Count)"
+    foreach ($row in $macroRows) { $content += "`nO$($row.MacroId)=$($row.OutSgId)" }
     
     $content += "`nmP=$($macroParams.Count)"
     foreach ($pin in $macroParams) { $content += "`nP$($pin.MacroId)=$($pin.Name)" }
     
-    $content += "`nMPi=$mPi"
+    $content += "`nMPi=$($macroRows | Where-Object { $_.InName -ne "[~UNUSED~]" }).Count"
     $idx = 1
-    foreach ($pin in $validInputs) { $content += "`nPi$idx=$($pin.DpId)"; $idx++ }
-    $content += "`nMPo=$mPo"
+    foreach ($row in $macroRows | Where-Object { $_.InName -ne "[~UNUSED~]" }) { $content += "`nPi$idx=$($row.InDpId)"; $idx++ }
+    $content += "`nMPo=$($macroRows | Where-Object { $_.OutName -ne "[~UNUSED~]" }).Count"
     $idx = 1
-    foreach ($pin in $validOutputs) { $content += "`nPo$idx=$($pin.DpId)"; $idx++ }
+    foreach ($row in $macroRows | Where-Object { $_.OutName -ne "[~UNUSED~]" }) { $content += "`nPo$idx=$($row.OutDpId)"; $idx++ }
     $content += "`nMPp=$mPp"
     $idx = 1
     foreach ($pin in $macroParams) { $content += "`nPp$idx=$($pin.DpId)"; $idx++ }
@@ -390,15 +456,15 @@ UserSymTreeName=$category
     if ($module.MaxO2 -gt 0) { $content += "`nn2O=$($module.MaxO2)" }
     
     $content += "`nmI=$($module.MaxI + $module.MaxI2)"
-    foreach ($pin in $macroInputs | Where-Object { -not $_.IsGap }) {
-        $innerIndex = if ($pin.List -eq 1) { $pin.InnerId } else { $pin.InnerId + $module.MaxI }
-        $content += "`nI$innerIndex=$($pin.SgId)"
+    foreach ($row in $macroRows | Where-Object { $_.InName -ne "[~UNUSED~]" }) {
+        $innerIndex = if ($row.In.List -eq 1) { $row.In.InnerId } else { $row.In.InnerId + $module.MaxI }
+        $content += "`nI$innerIndex=$($row.InSgId)"
     }
     
     $content += "`nmO=$($module.MaxO + $module.MaxO2)`ntO=$($module.MaxO + $module.MaxO2)"
-    foreach ($pin in $macroOutputs | Where-Object { -not $_.IsGap }) {
-        $innerIndex = if ($pin.List -eq 1) { $pin.InnerId } else { $pin.InnerId + $module.MaxO }
-        $content += "`nO$innerIndex=$($pin.SgId)"
+    foreach ($row in $macroRows | Where-Object { $_.OutName -ne "[~UNUSED~]" }) {
+        $innerIndex = if ($row.Out.List -eq 1) { $row.Out.InnerId } else { $row.Out.InnerId + $module.MaxO }
+        $content += "`nO$innerIndex=$($row.OutSgId)"
     }
     
     $content += "`nmP=$($module.TotalP)"
@@ -421,7 +487,7 @@ UserSymTreeName=$category
 }
 
 foreach ($f in $ushFiles) {
-    if ($f.Name -match "^Lockton") { continue }
+    # Process all modules, including Lockton logic cores
     $mod = Import-UshMetadata $f.FullName
     New-UmcWrapper $mod
 }

@@ -1,0 +1,26 @@
+# DHCP Reservations for Victory Commons (Refined)
+reservedlease add C4:42:68:85:A4:3C 172.22.0.1 CP4N_Control
+reservedlease add C4:42:68:85:A4:3F 172.22.0.1 CP4N_Control
+reservedlease add 00:0E:DD:66:51:EE 172.22.40.11 LargeTRMic
+reservedlease add 00:0E:DD:66:51:EF 172.22.40.12 LargeTRMic
+reservedlease add 38:AA:09:A2:75:CB 172.22.20.11 E02-LargeTREncoder
+reservedlease add C4:42:68:85:2A:B3 172.22.20.12 E04-SmallTRAirMedia
+reservedlease add 78:45:01:47:A1:FB 172.22.40.13 SmallTRDSP
+reservedlease add 78:45:01:47:A2:01 172.22.40.14 SmallTRDSP
+reservedlease add C4:42:68:85:28:2F 172.22.20.13 E06-LargeTRAirMedia
+reservedlease add C4:42:68:85:C1:5F 172.22.30.11 D01-SmallTRRoomkit
+reservedlease add C4:42:68:85:C1:68 172.22.30.12 D02-LargeTRRoomkit
+reservedlease add C4:42:68:85:C1:33 172.22.30.13 D04-LargeTRDecoder
+reservedlease add C4:42:68:83:9F:DF 172.22.30.14 D05-LargeTRDecoder
+reservedlease add C4:42:68:85:A1:EE 172.22.10.11 27
+reservedlease add C4:42:68:85:A1:59 172.22.10.12 28
+reservedlease add C4:42:68:83:9F:6F 172.22.10.13 29
+reservedlease add 78:45:01:47:A2:3C 172.22.40.15 LargeTRDSP
+reservedlease add C4:42:68:85:A5:8D 172.22.10.14 30
+reservedlease add 78:45:01:47:4B:C6 172.22.40.16 DSP
+reservedlease add 78:45:01:47:4B:C7 172.22.40.17 DSP
+reservedlease add 78:45:01:47:4B:C9 172.22.40.18 DSP
+reservedlease add C4:42:68:85:C1:6B 172.22.20.14 E07-HospitalityAirMedia
+reservedlease add C4:42:68:85:C1:73 172.22.20.15 E08-HospitalityEncoder
+reservedlease add C4:42:68:85:A2:64 172.22.30.15 D06-HospitalityDecoder
+reservedlease add 94:83:C4:68:40:1F 172.22.10.15 Device

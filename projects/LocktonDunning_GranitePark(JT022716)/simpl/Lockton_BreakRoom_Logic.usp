@@ -1,52 +1,309 @@
-#SYMBOL_NAME "Lockton BreakRoom Logic v1.0"
+#SYMBOL_NAME "Lockton BreakRoom Logic v1.23"
 #CATEGORY "46"
 #DEFAULT_VOLATILE
 #ENABLE_STACK_CHECKING
 
 #HELP_BEGIN
-Project-Specific Logic for Break Room 09.002
--------------------------------------------
-This logic module takes simple source selection pulses from the Break Room 
-touchpanel and automatically orchestrates the Video Wall power commands and 
-hardcoded NVX destination routing.
+--------------------------------------------------------------------------------
+MODULE NAME: Lockton Break Room Logic v1.23
+--------------------------------------------------------------------------------
+AUTHOR: James Ashcraft
+VERSION: 1.23
 
-INPUTS:
-[Source_PC_Press]       : Pulse to select the PC source.
-[Source_AirMedia_Press] : Pulse to select the AirMedia source.
-[Source_Off_Press]      : Pulse to power down the Video Wall.
+--------------------------------------------------------------------------------
+MODULE DESCRIPTION:
+Central logic core for Break Room 09.002. Handles NVX routing, volume
+feedback synchronization, scheduling, and Sonos transport.
 
-OUTPUTS:
-[NVX_Route_Address]     : Serial string containing the target Multicast IP to route. Connect to NVX RouteManager.
-[Display_Power_On]      : High pulse to power on the Video Wall. Connect to Planar Display Driver.
-[Display_Power_Off]     : High pulse to power off the Video Wall. Connect to Planar Display Driver.
+ARCHITECTURE:
+- .usp (Logic Engine): Handles states, timing, and string generation.
+- .umc (Face Wrapper): Visual organization for SIMPL Windows integrator.
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+DIGITAL INPUTS:
+--------------------------------------------------------------------------------
+Signal Name          Join   Description
+------------------   ----   ----------------------------------------------------
+Master_Mute_Tgl        1    Toggle master zone audio mute.
+Restroom_9F_Mute_Tgl   2    Toggle 9th Floor restroom mute.
+Restroom_10F_Mute_Tgl  3    Toggle 10th Floor restroom mute.
+Source_AirMedia_Pr     5    Select AirMedia source.
+Source_MediaPlayer_Pr  6    Select Media Player source.
+Source_Off_Pr          7    Select System Off (Power Down).
+Mic_Handheld_Mute_Tgl  9    Toggle Handheld Microphone mute.
+Mic_Bodypack_Mute_Tgl  10   Toggle Bodypack Microphone mute.
+Settings_Modal_Pr      12   Toggle Settings Modal visibility.
+Sonos_BR_Prev          14   Break Room Sonos: Previous Track.
+Sonos_BR_PlayPause     15   Break Room Sonos: Play/Pause Toggle.
+Sonos_BR_Next          16   Break Room Sonos: Next Track.
+Sonos_RR_Prev          19   Restroom Sonos: Previous Track.
+Sonos_RR_PlayPause     20   Restroom Sonos: Play/Pause Toggle.
+Sonos_RR_Next          21   Restroom Sonos: Next Track.
+Sched_On_7am_Pr       26   Set Auto-On to 7:00 AM.
+Sched_On_8am_Pr       27   Set Auto-On to 8:00 AM.
+Sched_On_9am_Pr       28   Set Auto-On to 9:00 AM.
+Sched_On_Disable_Pr    29   Disable Auto-On logic.
+Sched_Off_5pm_Pr      31   Set Auto-Off to 5:00 PM.
+Sched_Off_6pm_Pr      32   Set Auto-Off to 6:00 PM.
+Sched_Off_7pm_Pr      33   Set Auto-Off to 7:00 PM.
+Sched_Off_Disable_Pr   34   Disable Auto-Off logic.
+Minute_Heartbeat      36   Pulse on minute change (Triggers scheduling).
+
+--------------------------------------------------------------------------------
+ANALOG INPUTS:
+--------------------------------------------------------------------------------
+Signal Name          Join   Description
+------------------   ----   ----------------------------------------------------
+Master_Vol_fb          1    Audio Level feedback for Master zone.
+Restroom_9F_Vol_fb     2    Audio Level feedback for 9F Restroom.
+Restroom_10F_Vol_fb    3    Audio Level feedback for 10F Restroom.
+Mic_Handheld_Vol_fb    9    Audio Level feedback for Handheld Mic.
+Mic_Bodypack_Vol_fb    10   Audio Level feedback for Bodypack Mic.
+
+--------------------------------------------------------------------------------
+SERIAL INPUTS:
+--------------------------------------------------------------------------------
+Signal Name          Join   Description
+------------------   ----   ----------------------------------------------------
+Sonos_BR_Title_s      14   Break Room Sonos: Track Title.
+Sonos_BR_Artist_s     15   Break Room Sonos: Artist Name.
+Sonos_BR_Album_s      16   Break Room Sonos: Album Name.
+Sonos_BR_ArtUrl_s     17   Break Room Sonos: Album Art URL.
+Sonos_RR_Title_s      19   Restroom Sonos: Track Title.
+Sonos_RR_Artist_s     20   Restroom Sonos: Artist Name.
+Sonos_RR_Album_s      21   Restroom Sonos: Album Name.
+Sonos_RR_ArtUrl_s     22   Restroom Sonos: Album Art URL.
+
+--------------------------------------------------------------------------------
+DIGITAL OUTPUTS:
+--------------------------------------------------------------------------------
+Signal Name          Join   Description
+------------------   ----   ----------------------------------------------------
+Master_Mute_fb         1    Master Zone mute state feedback.
+Restroom_9F_Mute_fb    2    9F Restroom mute state feedback.
+Restroom_10F_Mute_fb   3    10F Restroom mute state feedback.
+Source_AirMedia_fb     5    AirMedia selection feedback.
+Source_MediaPlayer_fb  6    Media Player selection feedback.
+Source_Off_fb          7    System Off feedback.
+Mic_Handheld_Mute_fb   9    Handheld Mic mute state feedback.
+Mic_Bodypack_Mute_fb   10   Bodypack Mic mute state feedback.
+Settings_fb           12   Settings Modal visibility feedback.
+Sonos_BR_Prv_Pulse     14   Trigger Sonos Break Room: Previous.
+Sonos_BR_PP_Pulse      15   Trigger Sonos Break Room: Play/Pause.
+Sonos_BR_Nxt_Pulse     16   Trigger Sonos Break Room: Next.
+Sonos_RR_Prv_Pulse     19   Trigger Sonos Restroom: Previous.
+Sonos_RR_PP_Pulse      20   Trigger Sonos Restroom: Play/Pause.
+Sonos_RR_Nxt_Pulse     21   Trigger Sonos Restroom: Next.
+Logic_Ready           24   System initialization status (High = Ready).
+Sched_On_7am_fb       26   Preset feedback for 7am Auto-On.
+Sched_On_8am_fb       27   Preset feedback for 8am Auto-On.
+Sched_On_9am_fb       28   Preset feedback for 9am Auto-On.
+Sched_On_Disable_fb    29   Preset feedback for Disabled Auto-On.
+Sched_Off_5pm_fb      31   Preset feedback for 5pm Auto-Off.
+Sched_Off_6pm_fb      32   Preset feedback for 6pm Auto-Off.
+Sched_Off_7pm_fb      33   Preset feedback for 7pm Auto-Off.
+Sched_Off_Disable_fb   34   Preset feedback for Disabled Auto-Off.
+NVX_Do_Route          36   Trigger NVX physical route execution.
+Display_Pwr_On        37   Command display Power ON.
+Display_Pwr_Off       38   Command display Power OFF.
+
+--------------------------------------------------------------------------------
+ANALOG OUTPUTS:
+--------------------------------------------------------------------------------
+Signal Name          Join   Description
+------------------   ----   ----------------------------------------------------
+Master_Vol_out         1    Audio Level out for Master zone.
+Restroom_9F_Vol_out    2    Audio Level out for 9F Restroom.
+Restroom_10F_Vol_out   3    Audio Level out for 10F Restroom.
+Mic_Handheld_Vol_out   9    Audio Level out for Handheld Mic.
+Mic_Bodypack_Vol_out   10   Audio Level out for Bodypack Mic.
+
+--------------------------------------------------------------------------------
+SERIAL OUTPUTS:
+--------------------------------------------------------------------------------
+Signal Name          Join   Description
+------------------   ----   ----------------------------------------------------
+Sonos_BR_Title_fb     14   Break Room Sonos: Track Title Metadata.
+Sonos_BR_Artist_fb    15   Break Room Sonos: Artist Name Metadata.
+Sonos_BR_Album_fb     16   Break Room Sonos: Album Name Metadata.
+Sonos_BR_ArtUrl_fb    17   Break Room Sonos: Album Art URL Metadata.
+Sonos_RR_Title_fb     19   Restroom Sonos: Track Title Metadata.
+Sonos_RR_Artist_fb    20   Restroom Sonos: Artist Name Metadata.
+Sonos_RR_Album_fb     21   Restroom Sonos: Album Name Metadata.
+Sonos_RR_ArtUrl_fb    22   Restroom Sonos: Album Art URL Metadata.
+NVX_Route_Name        36   Current Source Name for Route Logic.
+NVX_Decoder_IP        37   Target IP for NVX Routing.
+
+--------------------------------------------------------------------------------
+PARAMETERS:
+--------------------------------------------------------------------------------
+Name                    Description
+--------------------    --------------------------------------------------------
+p_sNVX_Room_Decoder_IP  Static IP address of the NVX room decoder.
 #HELP_END
 
-DIGITAL_INPUT Source_PC_Press, Source_AirMedia_Press, Source_Off_Press;
+// --- DIGITAL INPUTS ---
+#BEGIN_GROUP "Audio Control"
+DIGITAL_INPUT  Master_Mute_Tgl, Restroom_9F_Mute_Tgl, Restroom_10F_Mute_Tgl;
+#END_GROUP
+DIGITAL_INPUT  _SKIP_; // Divider
+#BEGIN_GROUP "Source Selection"
+DIGITAL_INPUT  Source_AirMedia_Pr, Source_MediaPlayer_Pr, Source_Off_Pr;
+#END_GROUP
+DIGITAL_INPUT  _SKIP_; // Divider
+#BEGIN_GROUP "Microphones"
+DIGITAL_INPUT  Mic_Handheld_Mute_Tgl, Mic_Bodypack_Mute_Tgl;
+#END_GROUP
+DIGITAL_INPUT  _SKIP_; // Divider
+DIGITAL_INPUT  Settings_Modal_Pr;
+DIGITAL_INPUT  _SKIP_; // Divider
+#BEGIN_GROUP "Sonos Transport"
+DIGITAL_INPUT  Sonos_BR_Prev, Sonos_BR_PlayPause, Sonos_BR_Next;
+DIGITAL_INPUT  _SKIP_; // Divider
+DIGITAL_INPUT  Sonos_RR_Prev, Sonos_RR_PlayPause, Sonos_RR_Next;
+#END_GROUP
+DIGITAL_INPUT  _SKIP_; // Divider
+#BEGIN_GROUP "Scheduling"
+DIGITAL_INPUT  Sched_On_7am_Pr, Sched_On_8am_Pr, Sched_On_9am_Pr, Sched_On_Disable_Pr;
+DIGITAL_INPUT  _SKIP_; // Divider
+DIGITAL_INPUT  Sched_Off_5pm_Pr, Sched_Off_6pm_Pr, Sched_Off_7pm_Pr, Sched_Off_Disable_Pr;
+#END_GROUP
+DIGITAL_INPUT  _SKIP_; // Divider
+DIGITAL_INPUT  Minute_Heartbeat;
 
-STRING_OUTPUT NVX_Route_Address;
-DIGITAL_OUTPUT Display_Power_On, Display_Power_Off;
+// --- ANALOG INPUTS ---
+ANALOG_INPUT   Master_Vol_fb, Restroom_9F_Vol_fb, Restroom_10F_Vol_fb;
+ANALOG_INPUT   _SKIP_, _SKIP_, _SKIP_, _SKIP_, _SKIP_; // Calibration
+ANALOG_INPUT   Mic_Handheld_Vol_fb, Mic_Bodypack_Vol_fb;
 
-PUSH Source_PC_Press
+// --- SERIAL INPUTS ---
+STRING_INPUT   _SKIP_, _SKIP_, _SKIP_, _SKIP_, _SKIP_, _SKIP_, _SKIP_, _SKIP_, _SKIP_, _SKIP_, _SKIP_, _SKIP_, _SKIP_; // Alignment to Row 14
+STRING_INPUT   Sonos_BR_Title_s[100], Sonos_BR_Artist_s[100], Sonos_BR_Album_s[100], Sonos_BR_ArtUrl_s[250];
+STRING_INPUT   _SKIP_; // Gap
+STRING_INPUT   Sonos_RR_Title_s[100], Sonos_RR_Artist_s[100], Sonos_RR_Album_s[100], Sonos_RR_ArtUrl_s[250];
+
+// --- DIGITAL OUTPUTS ---
+#BEGIN_GROUP "Audio Control"
+DIGITAL_OUTPUT Master_Mute_fb, Restroom_9F_Mute_fb, Restroom_10F_Mute_fb;
+#END_GROUP
+DIGITAL_OUTPUT _SKIP_;
+#BEGIN_GROUP "Source Selection"
+DIGITAL_OUTPUT Source_AirMedia_fb, Source_MediaPlayer_fb, Source_Off_fb;
+#END_GROUP
+DIGITAL_OUTPUT _SKIP_;
+#BEGIN_GROUP "Microphones"
+DIGITAL_OUTPUT Mic_Handheld_Mute_fb, Mic_Bodypack_Mute_fb;
+#END_GROUP
+DIGITAL_OUTPUT _SKIP_;
+DIGITAL_OUTPUT Settings_fb;
+DIGITAL_OUTPUT _SKIP_;
+DIGITAL_OUTPUT Sonos_BR_Prv_Pulse, Sonos_BR_PP_Pulse, Sonos_BR_Nxt_Pulse;
+DIGITAL_OUTPUT _SKIP_;
+DIGITAL_OUTPUT Sonos_RR_Prv_Pulse, Sonos_RR_PP_Pulse, Sonos_RR_Nxt_Pulse;
+DIGITAL_OUTPUT _SKIP_;
+DIGITAL_OUTPUT Logic_Ready;
+DIGITAL_OUTPUT _SKIP_;
+DIGITAL_OUTPUT Sched_On_7am_fb, Sched_On_8am_fb, Sched_On_9am_fb, Sched_On_Disable_fb;
+DIGITAL_OUTPUT _SKIP_;
+DIGITAL_OUTPUT Sched_Off_5pm_fb, Sched_Off_6pm_fb, Sched_Off_7pm_fb, Sched_Off_Disable_fb;
+DIGITAL_OUTPUT _SKIP_;
+DIGITAL_OUTPUT NVX_Do_Route, Display_Pwr_On, Display_Pwr_Off;
+
+// --- ANALOG OUTPUTS ---
+ANALOG_OUTPUT  Master_Vol_out, Restroom_9F_Vol_out, Restroom_10F_Vol_out;
+ANALOG_OUTPUT  _SKIP_, _SKIP_, _SKIP_, _SKIP_, _SKIP_;
+ANALOG_OUTPUT  Mic_Handheld_Vol_out, Mic_Bodypack_Vol_out;
+
+// --- SERIAL OUTPUTS ---
+STRING_OUTPUT  _SKIP_, _SKIP_, _SKIP_, _SKIP_, _SKIP_, _SKIP_, _SKIP_, _SKIP_, _SKIP_, _SKIP_, _SKIP_, _SKIP_, _SKIP_; 
+STRING_OUTPUT  Sonos_BR_Title_fb, Sonos_BR_Artist_fb, Sonos_BR_Album_fb, Sonos_BR_ArtUrl_fb;
+STRING_OUTPUT  _SKIP_;
+STRING_OUTPUT  Sonos_RR_Title_fb, Sonos_RR_Artist_fb, Sonos_RR_Album_fb, Sonos_RR_ArtUrl_fb;
+STRING_OUTPUT  _SKIP_, _SKIP_, _SKIP_, _SKIP_, _SKIP_, _SKIP_, _SKIP_, _SKIP_, _SKIP_, _SKIP_, _SKIP_, _SKIP_, _SKIP_; 
+STRING_OUTPUT  NVX_Route_Name, NVX_Decoder_IP;
+
+// --- PARAMETERS ---
+// Push to bottom (Tallest side is ~36 rows). Using 40 skips to ensure parameter sit at Row 41.
+INTEGER_PARAMETER _SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_;
+STRING_PARAMETER p_sNVX_Room_Decoder_IP[50];
+
+// --- GLOBALS ---
+INTEGER g_nSchedOnMode, g_nSchedOffMode;
+
+// --- FUNCTIONS ---
+Function UpdateSchedFB()
 {
-    Display_Power_On = 1;
-    Display_Power_Off = 0;
-    NVX_Route_Address = "172.22.20.10";
+    Sched_On_7am_fb = (g_nSchedOnMode = 1);
+    Sched_On_8am_fb = (g_nSchedOnMode = 2);
+    Sched_On_9am_fb = (g_nSchedOnMode = 3);
+    Sched_On_Disable_fb = (g_nSchedOnMode = 0);
+    Sched_Off_5pm_fb = (g_nSchedOffMode = 1);
+    Sched_Off_6pm_fb = (g_nSchedOffMode = 2);
+    Sched_Off_7pm_fb = (g_nSchedOffMode = 3);
+    Sched_Off_Disable_fb = (g_nSchedOffMode = 0);
 }
 
-PUSH Source_AirMedia_Press
-{
-    Display_Power_On = 1;
-    Display_Power_Off = 0;
-    NVX_Route_Address = "172.22.21.10";
+// --- EVENTS ---
+PUSH Source_MediaPlayer_Pr {
+    Display_Pwr_On = 1; Display_Pwr_Off = 0;
+    Source_MediaPlayer_fb = 1; Source_AirMedia_fb = 0; Source_Off_fb = 0;
+    NVX_Route_Name = "MediaPlayer"; NVX_Decoder_IP = p_sNVX_Room_Decoder_IP;
+    Pulse(10, NVX_Do_Route);
+}
+PUSH Source_AirMedia_Pr {
+    Display_Pwr_On = 1; Display_Pwr_Off = 0;
+    Source_MediaPlayer_fb = 0; Source_AirMedia_fb = 1; Source_Off_fb = 0;
+    NVX_Route_Name = "AirMedia"; NVX_Decoder_IP = p_sNVX_Room_Decoder_IP;
+    Pulse(10, NVX_Do_Route);
+}
+PUSH Source_Off_Pr {
+    Display_Pwr_On = 0; Display_Pwr_Off = 1;
+    Source_MediaPlayer_fb = 0; Source_AirMedia_fb = 0; Source_Off_fb = 1;
 }
 
-PUSH Source_Off_Press
-{
-    Display_Power_Off = 1;
-    Display_Power_On = 0;
+PUSH Sonos_BR_Prev      { Pulse(10, Sonos_BR_Prv_Pulse); }
+PUSH Sonos_BR_PlayPause { Pulse(10, Sonos_BR_PP_Pulse); }
+PUSH Sonos_BR_Next      { Pulse(10, Sonos_BR_Nxt_Pulse); }
+PUSH Sonos_RR_Prev      { Pulse(10, Sonos_RR_Prv_Pulse); }
+PUSH Sonos_RR_PlayPause { Pulse(10, Sonos_RR_PP_Pulse); }
+PUSH Sonos_RR_Next      { Pulse(10, Sonos_RR_Nxt_Pulse); }
+
+CHANGE Sonos_BR_Title_s { Sonos_BR_Title_fb = Sonos_BR_Title_s; }
+CHANGE Sonos_BR_Artist_s { Sonos_BR_Artist_fb = Sonos_BR_Artist_s; }
+CHANGE Sonos_BR_ArtUrl_s { Sonos_BR_ArtUrl_fb = Sonos_BR_ArtUrl_s; }
+CHANGE Sonos_RR_Title_s { Sonos_RR_Title_fb = Sonos_RR_Title_s; }
+CHANGE Sonos_RR_Artist_s { Sonos_RR_Artist_fb = Sonos_RR_Artist_s; }
+CHANGE Sonos_RR_ArtUrl_s { Sonos_RR_ArtUrl_fb = Sonos_RR_ArtUrl_s; }
+
+CHANGE Master_Vol_fb { Master_Vol_out = Master_Vol_fb; }
+CHANGE Restroom_9F_Vol_fb { Restroom_9F_Vol_out = Restroom_9F_Vol_fb; }
+CHANGE Restroom_10F_Vol_fb { Restroom_10F_Vol_out = Restroom_10F_Vol_fb; }
+CHANGE Mic_Handheld_Vol_fb { Mic_Handheld_Vol_out = Mic_Handheld_Vol_fb; }
+CHANGE Mic_Bodypack_Vol_fb { Mic_Bodypack_Vol_out = Mic_Bodypack_Vol_fb; }
+
+PUSH Sched_On_7am_Pr       { g_nSchedOnMode = 1; UpdateSchedFB(); }
+PUSH Sched_On_8am_Pr       { g_nSchedOnMode = 2; UpdateSchedFB(); }
+PUSH Sched_On_9am_Pr       { g_nSchedOnMode = 3; UpdateSchedFB(); }
+PUSH Sched_On_Disable_Pr    { g_nSchedOnMode = 0; UpdateSchedFB(); }
+PUSH Sched_Off_5pm_Pr      { g_nSchedOffMode = 1; UpdateSchedFB(); }
+PUSH Sched_Off_6pm_Pr      { g_nSchedOffMode = 2; UpdateSchedFB(); }
+PUSH Sched_Off_7pm_Pr      { g_nSchedOffMode = 3; UpdateSchedFB(); }
+PUSH Sched_Off_Disable_Pr   { g_nSchedOffMode = 0; UpdateSchedFB(); }
+
+PUSH Minute_Heartbeat {
+    integer h; h = GetHourNum();
+    if (g_nSchedOnMode = 1 && h = 7) { Display_Pwr_On = 1; Display_Pwr_Off = 0; }
+    else if (g_nSchedOnMode = 2 && h = 8) { Display_Pwr_On = 1; Display_Pwr_Off = 0; }
+    else if (g_nSchedOnMode = 3 && h = 9) { Display_Pwr_On = 1; Display_Pwr_Off = 0; }
+    if (g_nSchedOffMode = 1 && h = 17) { Display_Pwr_On = 0; Display_Pwr_Off = 1; }
+    else if (g_nSchedOffMode = 2 && h = 18) { Display_Pwr_On = 0; Display_Pwr_Off = 1; }
+    else if (g_nSchedOffMode = 3 && h = 19) { Display_Pwr_On = 0; Display_Pwr_Off = 1; }
 }
 
-Function Main()
-{
+Function Main() {
     WaitForInitializationComplete();
+    g_nSchedOnMode = 2; g_nSchedOffMode = 2;
+    UpdateSchedFB();
+    Logic_Ready = 1;
 }

@@ -1,0 +1,71 @@
+#SYMBOL_NAME "Planar Display v1.0"
+#CATEGORY "46"
+#DEFAULT_VOLATILE
+#ENABLE_STACK_CHECKING
+
+#HELP_BEGIN
+Modular Planar Video Wall Driver
+--------------------------------
+Provides TCP/IP control for Planar Video Wall displays.
+
+INPUTS:
+[Initialize]   : Pulse to initialize the C# driver with the given IP address.
+[Power_On]     : Pulse to power on the display.
+[Power_Off]    : Pulse to power off the display.
+[Backlight_In] : Analog Decimal value specifying the backlight intensity. Range: 0d to 100d (Percent).
+
+OUTPUTS:
+[Power_On_FB]  : High when the display reports its power state is ON.
+[Power_Off_FB] : High when the display reports its power state is OFF.
+[Backlight_FB] : Analog Decimal value reporting the current backlight intensity. Range: 0d to 100d (Percent).
+
+PARAMETERS:
+[IP_Address]   : Serial string containing the IPv4 address of the Planar display (e.g., "172.22.10.51").
+#HELP_END
+
+#USER_SIMPLSHARP_LIBRARY "PlanarDisplay"
+
+DIGITAL_INPUT  Initialize;
+DIGITAL_INPUT  Power_On, Power_Off;
+ANALOG_INPUT   Backlight_In;
+
+DIGITAL_OUTPUT Power_On_FB, Power_Off_FB;
+ANALOG_OUTPUT  Backlight_FB;
+
+STRING_PARAMETER IP_Address[100];
+
+#BEGIN_PARAMETER_PROPERTIES IP_Address
+   propValidUnits = unitString;
+   propDefaultUnit = unitString;
+   propDefaultValue = "";
+#END_PARAMETER_PROPERTIES
+
+DisplayDriver _driver;
+
+CALLBACK FUNCTION OnPowerChange()
+{
+    Power_On_FB = (_driver.CurrentPowerState = 1);
+    Power_Off_FB = (_driver.CurrentPowerState = 0);
+}
+
+CALLBACK FUNCTION OnBacklightChange()
+{
+    Backlight_FB = _driver.CurrentBacklight;
+}
+
+PUSH Initialize
+{
+    _driver.Initialize(IP_Address);
+}
+
+PUSH Power_On  { _driver.PowerOn(); }
+PUSH Power_Off { _driver.PowerOff(); }
+
+CHANGE Backlight_In { _driver.SetBacklight(Backlight_In); }
+
+Function Main()
+{
+    WaitForInitializationComplete();
+    RegisterDelegate(_driver, OnPowerChanged, OnPowerChange);
+    RegisterDelegate(_driver, OnBacklightChanged, OnBacklightChange);
+}

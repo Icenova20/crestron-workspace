@@ -1,12 +1,13 @@
 {
   "name": "rangerstr-html-control",
   "version": "1.0.0",
-  "description": "Crestron HTML5 UI for Rangers Training Room",
+  "description": "Crestron HTML5 UI for Lockton Dunning - Break Room & Audio",
   "main": "index.html",
   "scripts": {
-    "start": "echo 'Open index.html in a browser or load onto processor'",
-    "build:archive": "node ./node_modules/@crestron/ch5-utilities-cli/build/index.js archive -p lockton_dunning -d . -o ./",
-    "build": "npm run build:archive"
+    "start": "echo 'Reloading and testing locally...'",
+    "clean": "node ./node_modules/rimraf/bin.js dist temp ../dist",
+    "build:archive": "node ./node_modules/@crestron/ch5-utilities-cli/build/index.js archive -p lockton_dunning -d . -o ../dist",
+    "build": "npm run clean && npm run build:archive"
   },
   "devDependencies": {
     "@crestron/ch5-utilities-cli": "^2.0.0"

@@ -1,0 +1,103 @@
+#SYMBOL_NAME "Shure Mxw v1.0"
+#CATEGORY "46"
+#DEFAULT_VOLATILE
+#ENABLE_STACK_CHECKING
+
+#HELP_BEGIN
+Modular Shure MXW Microphone Driver
+-----------------------------------
+Provides TCP/IP control for the Shure Microflex Wireless (MXW) system.
+Expanded to natively support 8 channels directly on the symbol UI for MXWAPT8 systems.
+
+INPUTS:
+[Initialize]   : Pulse to instantiate the C# driver and connect to the MXW APT over TCP.
+[Mute_All_On]  : Pulse to systematically mute all 8 wireless channels simultaneously.
+[Mute_All_Off] : Pulse to systematically unmute all 8 wireless channels simultaneously.
+[Mute_On]      : Pulse to mute a specific channel. (Array, indices 1-8)
+[Mute_Off]     : Pulse to unmute a specific channel. (Array, indices 1-8)
+
+OUTPUTS:
+[Mute_FB]      : Feedback mute state natively reported by the Shure hardware. (Array, indices 1-8)
+[Battery_Level]: Analog Decimal battery level reporting from the microphone. Range: 0d to 100d (Percent). (Array, indices 1-8)
+
+PARAMETERS:
+[IP_Address]   : Serial string containing the IPv4 address of the Shure MXW Access Point (APT).
+#HELP_END
+
+#USER_SIMPLSHARP_LIBRARY "ShureMxw"
+
+DIGITAL_INPUT  Initialize;
+DIGITAL_INPUT  Mute_All_On, Mute_All_Off;
+DIGITAL_INPUT  Mute_On[8];
+DIGITAL_INPUT  Mute_Off[8];
+
+DIGITAL_OUTPUT Mute_FB[8];
+DIGITAL_OUTPUT Button_Press_FB[8];
+ANALOG_OUTPUT  Battery_Level[8];
+
+STRING_PARAMETER IP_Address[50];
+
+#BEGIN_PARAMETER_PROPERTIES IP_Address
+   propValidUnits = unitString;
+   propDefaultUnit = unitString;
+   propDefaultValue = "";
+#END_PARAMETER_PROPERTIES
+
+MxwDriver _driver;
+
+CALLBACK FUNCTION OnMuteChange()
+{
+    integer idx;
+    idx = _driver.CurrentMuteIndex;
+    if (idx >= 1 && idx <= 8)
+    {
+        Mute_FB[idx] = _driver.CurrentMuteState;
+    }
+}
+
+CALLBACK FUNCTION OnButtonChange()
+{
+    integer idx;
+    idx = _driver.CurrentButtonIndex;
+    if (idx >= 1 && idx <= 8)
+    {
+        Button_Press_FB[idx] = _driver.CurrentButtonState;
+    }
+}
+
+PUSH Initialize
+{
+    _driver.Initialize(IP_Address);
+    _driver.Connect();
+}
+
+PUSH Mute_All_On
+{
+    _driver.SetMuteAll(1);
+}
+
+PUSH Mute_All_Off
+{
+    _driver.SetMuteAll(0);
+}
+
+PUSH Mute_On
+{
+    integer idx;
+    idx = getLastModifiedArrayIndex();
+    _driver.SetMute(idx, 1);
+}
+
+PUSH Mute_Off
+{
+    integer idx;
+    idx = getLastModifiedArrayIndex();
+    _driver.SetMute(idx, 0);
+}
+
+Function Main()
+{
+    WaitForInitializationComplete();
+    RegisterDelegate(_driver, OnMuteChanged, OnMuteChange);
+    RegisterDelegate(_driver, OnButtonChanged, OnButtonChange);
+}
