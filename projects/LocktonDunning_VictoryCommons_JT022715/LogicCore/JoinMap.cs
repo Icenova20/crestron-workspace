@@ -40,6 +40,19 @@ namespace LocktonLogic
         public const uint SonosPrev      = 41;
         public const uint SonosPlayPause = 42;
         public const uint SonosNext      = 43;
+        public const uint SonosLevel     = 45; // Analog Level
+        public const uint SonosTransport = 46; // String Status
+
+        // Sonos Metadata (Serial: 41-48)
+        public const uint SonosTitle     = 41;
+        public const uint SonosArtist    = 42;
+        public const uint SonosAlbum     = 43;
+        public const uint SonosArtUrl    = 44;
+        
+        public const uint SonosRRTitle   = 45;
+        public const uint SonosRRArtist  = 46;
+        public const uint SonosRRAlbum   = 47;
+        public const uint SonosRRArtUrl  = 48;
 
         // --- SCHEDULING (101-114) ---
         public const uint AutoOn7am      = 101;

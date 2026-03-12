@@ -26,6 +26,10 @@ namespace LocktonStandalone
         // Cresnet Devices
         public GlsPartCn TrainingPartitionSensor { get; private set; }
         
+        // Sonos (from .clz)
+        public SonosControl.SonosDriver HospitalitySonos { get; private set; }
+        public SonosControl.SonosDriver RestroomSonos { get; private set; }
+        
         // Biamp Tesira (Multi-Zone)
         public BiampTesira TesiraProcessor { get; private set; }
         public LevelComponent HospitalityVolume { get; private set; }
@@ -76,6 +80,13 @@ namespace LocktonStandalone
             TrainingPartitionSensor = new GlsPartCn(0x51, _system);
             TrainingPartitionSensor.Register();
             */
+
+            // --- SONOS ---
+            HospitalitySonos = new SonosControl.SonosDriver();
+            HospitalitySonos.Initialize("Hospitality", "172.22.10.61", 5005);
+
+            RestroomSonos = new SonosControl.SonosDriver();
+            RestroomSonos.Initialize("Restroom", "172.22.10.61", 5005); // Both likely talk to the same bridge IP
 
             // --- BIAMP TESIRA ---
             // ID 1 used to link all components together

@@ -58,6 +58,8 @@ namespace LocktonLogic
             {
                 if (OnPulse != null) OnPulse(join);
             }
+            else if (IsAutoOn(join)) SelectAutoOn(join);
+            else if (IsAutoOff(join)) SelectAutoOff(join);
         }
 
         public override void HandleAnalogChange(uint join, ushort value)
@@ -111,6 +113,48 @@ namespace LocktonLogic
             }
         }
 
+        private void SelectAutoOn(uint join)
+        {
+            _activeAutoOn = join;
+            foreach (uint s in JoinMap.AllAutoOn)
+            {
+                if (OnDigitalFeedback != null) OnDigitalFeedback(s, s == join);
+            }
+        }
+
+        private void SelectAutoOff(uint join)
+        {
+            _activeAutoOff = join;
+            foreach (uint s in JoinMap.AllAutoOff)
+            {
+                if (OnDigitalFeedback != null) OnDigitalFeedback(s, s == join);
+            }
+        }
+
+        /// <summary>
+        /// Logic Heartbeat (Called every 60 seconds)
+        /// Performs scheduled power events.
+        /// </summary>
+        public void ExecuteHeartbeat(int hour, int minute)
+        {
+            // Scheduling Check
+            if (_activeAutoOn == JoinMap.AutoOn7am && hour == 7 && minute == 0) SelectSource(JoinMap.AirMedia);
+            else if (_activeAutoOn == JoinMap.AutoOn8am && hour == 8 && minute == 0) SelectSource(JoinMap.AirMedia);
+            else if (_activeAutoOn == JoinMap.AutoOn9am && hour == 9 && minute == 0) SelectSource(JoinMap.AirMedia);
+
+            if (_activeAutoOff == JoinMap.AutoOff5pm && hour == 17 && minute == 0) PowerOff();
+            else if (_activeAutoOff == JoinMap.AutoOff6pm && hour == 18 && minute == 0) PowerOff();
+            else if (_activeAutoOff == JoinMap.AutoOff7pm && hour == 19 && minute == 0) PowerOff();
+        }
+
+        /// <summary>
+        /// Update Sonos Metadata (Skip hardware, update logic/UI)
+        /// </summary>
+        public void SyncSerialValue(uint join, string value)
+        {
+            if (OnSerialFeedback != null) OnSerialFeedback(join, value);
+        }
+
         private void ToggleMute(uint join)
         {
             _muteStates[join] = !_muteStates[join];
@@ -136,6 +180,18 @@ namespace LocktonLogic
         private bool IsSource(uint join)
         {
             foreach (uint src in JoinMap.AllSources) if (src == join) return true;
+            return false;
+        }
+
+        private bool IsAutoOn(uint join)
+        {
+            foreach (uint s in JoinMap.AllAutoOn) if (s == join) return true;
+            return false;
+        }
+
+        private bool IsAutoOff(uint join)
+        {
+            foreach (uint s in JoinMap.AllAutoOff) if (s == join) return true;
             return false;
         }
     }

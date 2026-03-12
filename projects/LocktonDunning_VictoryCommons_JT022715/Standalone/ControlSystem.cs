@@ -16,6 +16,7 @@ namespace LocktonStandalone
         private RoomManager _rooms;
         private CiscoIntegration _largeCisco;
         private CiscoIntegration _smallCisco;
+        private CTimer _heartbeatTimer;
 
         public ControlSystem() : base()
         {
@@ -173,6 +174,27 @@ namespace LocktonStandalone
                 _hardware.MicLapel2Volume.OnLevelChangePercent += (sender, args) => { _rooms.HospitalityArea.SyncAnalogValue(JoinMap.Lapel2Level, args.Payload); };
                 _hardware.MicLapel2Mute.OnStateChange += (sender, args) => { _rooms.HospitalityArea.SyncDigitalValue(JoinMap.Lapel2Mute, args.Payload == 1); };
 
+                // 7. Bind Sonos Integration
+                _rooms.HospitalityArea.OnPulse = (join) => 
+                {
+                    if (join == JoinMap.SonosPrev) _hardware.HospitalitySonos.Previous();
+                    else if (join == JoinMap.SonosPlayPause) _hardware.HospitalitySonos.Play(); // The library lacks a toggle, defaulting to Play
+                    else if (join == JoinMap.SonosNext) _hardware.HospitalitySonos.Next();
+                };
+
+                // Sonos Events -> Logic -> UI
+                _hardware.HospitalitySonos.OnVolumeChanged += () => { _rooms.HospitalityArea.SyncAnalogValue(JoinMap.SonosLevel, (ushort)_hardware.HospitalitySonos.CurrentVolume); };
+                _hardware.HospitalitySonos.OnTransportStateChanged += () => { _rooms.HospitalityArea.SyncSerialValue(JoinMap.SonosTransport, _hardware.HospitalitySonos.CurrentTransportState); };
+
+                // Note: Title, Artist, and ArtUrl are NOT supported by this DLL version.
+                // Re-enabling would require a newer library or a different bridge.
+
+                // Relay Serial feedback to UI
+                _rooms.HospitalityArea.OnSerialFeedback = (join, val) => { _hardware.HospitalityPanel.StringInput[join].StringValue = val; };
+
+                // 8. Start Heartbeat Timer (Every 60 seconds)
+                _heartbeatTimer = new CTimer(OnHeartbeat, null, 60000, 60000);
+
                 CrestronConsole.PrintLine("[System] Standalone C# Orchestration Online.");
             }
             catch (Exception ex)
@@ -180,6 +202,12 @@ namespace LocktonStandalone
                 CrestronConsole.PrintLine("\n[CRITICAL ERROR] InitializeSystem Failed: {0}", ex.Message);
                 CrestronConsole.PrintLine(ex.StackTrace);
             }
+        }
+
+        private void OnHeartbeat(object callbackObject)
+        {
+            var now = DateTime.Now;
+            _rooms.HospitalityArea.ExecuteHeartbeat(now.Hour, now.Minute);
         }
 
         private void ExecuteTestTesira(string command)

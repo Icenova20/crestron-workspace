@@ -33,5 +33,9 @@
       <HintPath>..\..\..\modules\simpl\unzipped_planar\PlanarDisplay.dll</HintPath>
       <Private>True</Private>
     </Reference>
+    <Reference Include="SonosControl">
+      <HintPath>..\..\..\modules\simpl\SPlsWork\SonosControl.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
   </ItemGroup>
 </Project>
