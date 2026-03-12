@@ -4,11 +4,13 @@ This workspace is a standardized environment for Crestron SIMPL+ and SIMPL Windo
 
 ## Environment & Tools
 - **OS**: Windows 11 with WSL installed (Ubuntu/Debian).
+  - **WSL Stability**: Drive `D:` is persistently mounted to `/d/` via `/etc/fstab` with `metadata` enabled. Path translation errors are resolved. WSL uses `mirrored` networking mode for seamless host/guest communication.
 - **Primary IDE**: VS Code with Antigravity.
 - **Build Tool**: `tools/build-project.ps1`.
   - **Function**: Reconciles `projects/PROJECT_NAME/dependencies.json`.
   - **Logic**: Copies modular assets (.usp, .ush, .umc, .clz) from `modules/simpl` to the project's logic folder and then compiles local project logic.
   - **Critical Rule**: Dependencies are **copy-only**. We do not auto-recompile modular drivers during a project build to prevent `.ush` header corruption.
+- **Tooling Philosophy**: Always prioritize finding and using the **best tool** for an operation (e.g., native PowerShell `Expand-Archive` for zips, `grep_search` for text) rather than seeking workarounds. Using optimized, native tools is always superior to shell-hopping or manual fixes.
 
 ## Workspace Architecture
 
